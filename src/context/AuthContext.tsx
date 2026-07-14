@@ -72,7 +72,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return response;
   };
 
-  const verifyTotp = async (data: TotpVerificationRequest) => {//validate the TOTP code and get the access token
+  const verifyTotp = async (data: TotpVerificationRequest) => {
     const response = await authService.verifyTotp(data);
 
     authService.saveAccessToken(response.accessToken);
@@ -83,7 +83,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return response;
   };
 
-  const exchangeGoogleCode = async (code: string) => {
+  const exchangeGoogleCode = async (code: string) => { //exchangeGoogleCode function to handle Google OAuth code exchange
     const response = await authService.exchangeGoogleCode(code);
 
     authService.saveAccessToken(response.accessToken);
