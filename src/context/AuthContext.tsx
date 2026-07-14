@@ -5,7 +5,7 @@ import {
   type ReactNode,
 } from "react";
 
-import authService from "../services/auth.service";
+import authService from "../services/auth.service"; 
 import type {
   AuthContextType,
   LoginRequest,
@@ -49,7 +49,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     void restoreSession();
   }, []);
 
-  const register = async (data: RegisterRequest) => {
+  const register = async (data: RegisterRequest) => { //return authService.register(data);
     return authService.register(data);
   };
 

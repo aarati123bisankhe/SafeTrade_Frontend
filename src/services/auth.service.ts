@@ -13,7 +13,7 @@ const ACCESS_TOKEN_KEY = "accessToken";
 const CURRENT_USER_KEY = "currentUser";
 const MFA_TOKEN_KEY = "mfaToken";
 
-const persistAuthenticatedSession = ( //persist the access token and user information in session storage
+const persistAuthenticatedSession = (
   accessToken: string,
   user: User
 ): void => {
