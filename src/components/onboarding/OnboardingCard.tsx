@@ -4,7 +4,7 @@ type OnboardingCardProps = {
   eyebrow: string;
 };
 
-export default function OnboardingCard({
+export default function OnboardingCard({ //onboarding card component
   title,
   description,
   eyebrow,

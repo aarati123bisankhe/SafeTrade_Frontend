@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 
 import Button from "../common/Button";
 
-export default function Navbar() { //navbar component
+export default function Navbar() { 
   return (
     <header className="navbar">
       <div className="navbar__brand">
