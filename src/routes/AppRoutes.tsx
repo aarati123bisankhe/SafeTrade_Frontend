@@ -9,6 +9,8 @@ import BuyerDashboardPage from "../pages/buyer/BuyerDashboardPage";
 import NotFoundPage from "../pages/errors/NotFoundPage";
 import ProductDetailsPage from "../pages/products/ProductDetailsPage";
 import ProductsPage from "../pages/products/ProductsPage";
+import LandingPage from "../pages/public/LandingPage";
+import OnboardingPage from "../pages/public/OnboardingPage";
 import SellerDashboardPage from "../pages/seller/SellerDashboardPage";
 
 import ProtectedRoute from "./ProtectedRoute";
@@ -17,7 +19,8 @@ import RoleProtectedRoute from "./RoleProtectedRoute";
 export default function AppRoutes() { 
   return (
     <Routes>
-      <Route path="/" element={<ProductsPage />} />
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/onboarding" element={<OnboardingPage />} />
       <Route path="/products" element={<ProductsPage />} />
       <Route path="/products/:productId" element={<ProductDetailsPage />} />
 
