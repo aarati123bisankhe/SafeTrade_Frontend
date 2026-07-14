@@ -97,7 +97,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   };
 
-  const refreshCurrentUser = async () => { // Refresh the current user data from the server
+  const refreshCurrentUser = async () => { 
     const currentUser = await authService.getCurrentUser();
     setUser(currentUser);
 
