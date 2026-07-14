@@ -19,18 +19,18 @@ const persistAuthenticatedSession = (
 ): void => {
   sessionStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
   sessionStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
-}
+};
 
 const clearAuthenticatedSession = (): void => {
   sessionStorage.removeItem(ACCESS_TOKEN_KEY);
   sessionStorage.removeItem(CURRENT_USER_KEY);
-}
+};
 
 const isAuthSuccessResponse = (
   response: LoginResponse
 ): response is AuthSuccessResponse => {
   return "accessToken" in response;
-}
+};
 
 export const authService = {
   async register(payload: RegisterRequest): Promise<User> {
@@ -56,7 +56,7 @@ export const authService = {
     payload: TotpVerificationRequest
   ): Promise<AuthSuccessResponse> {
     const { data } = await api.post<AuthSuccessResponse>(
-      "/auth/totp/verify",
+      "/auth/totp/verify-login",
       payload
     );
 
@@ -68,7 +68,7 @@ export const authService = {
 
   async exchangeGoogleCode(code: string): Promise<OAuthExchangeResponse> {
     const { data } = await api.post<OAuthExchangeResponse>(
-      "/auth/oauth/google/exchange",
+      "/auth/oauth/exchange",
       { code }
     );
 
@@ -105,8 +105,20 @@ export const authService = {
     return sessionStorage.getItem(ACCESS_TOKEN_KEY);
   },
 
+  getAccessToken(): string | null {
+    return sessionStorage.getItem(ACCESS_TOKEN_KEY);
+  },
+
   getStoredMfaToken(): string | null {
     return sessionStorage.getItem(MFA_TOKEN_KEY);
+  },
+
+  saveAccessToken(accessToken: string): void {
+    sessionStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  },
+
+  saveCurrentUser(user: User): void {
+    sessionStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
   },
 
   logout(): void {
