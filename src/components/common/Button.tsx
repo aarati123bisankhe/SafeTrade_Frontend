@@ -4,7 +4,7 @@ import { Link, type LinkProps } from "react-router-dom";
 type ButtonVariant = "primary" | "secondary" | "ghost" | "success";
 type ButtonSize = "sm" | "md" | "lg";
 
-type BaseButtonProps = {
+type BaseButtonProps = { //button component props
   children: ReactNode;
   variant?: ButtonVariant;
   size?: ButtonSize;
