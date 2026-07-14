@@ -3,7 +3,7 @@ type LoaderProps = {
   fullScreen?: boolean;
 };
 
-export default function Loader({ //loader component
+export default function Loader({ 
   label = "Loading...",
   fullScreen = false,
 }: LoaderProps) {
