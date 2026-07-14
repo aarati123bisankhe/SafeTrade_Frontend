@@ -1,6 +1,6 @@
 import Badge from "./Badge";
 
-type StatusBadgeVariant = "success" | "warning" | "danger" | "info" | "default";
+type StatusBadgeVariant = "success" | "warning" | "danger" | "info" | "default"; //status badge variants
 
 type StatusBadgeProps = {
   label: string;
