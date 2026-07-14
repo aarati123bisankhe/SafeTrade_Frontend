@@ -3,7 +3,7 @@ import { Navigate, Outlet } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 import type { UserRole } from "../types/auth.types";
 
-type RoleProtectedRouteProps = {
+type RoleProtectedRouteProps = { // Define the props for the RoleProtectedRoute component
   allowedRoles: UserRole[];
 };
 

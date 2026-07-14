@@ -14,7 +14,7 @@ import SellerDashboardPage from "../pages/seller/SellerDashboardPage";
 import ProtectedRoute from "./ProtectedRoute";
 import RoleProtectedRoute from "./RoleProtectedRoute";
 
-export default function AppRoutes() { // Define the routes for the application
+export default function AppRoutes() { 
   return (
     <Routes>
       <Route path="/" element={<ProductsPage />} />
