@@ -10,6 +10,10 @@ export function getApiErrorMessage(
     return fallbackMessage;
   }
 
+  if (!error.response) {
+    return "We couldn't reach the server. Please make sure the backend is running and try again.";
+  }
+
   const response = error.response?.data as ApiErrorResponse | undefined;
 
   if (!response) {

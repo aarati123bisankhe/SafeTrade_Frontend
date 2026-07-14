@@ -13,6 +13,7 @@ import LandingPage from "../pages/public/LandingPage";
 import OnboardingPage from "../pages/public/OnboardingPage";
 import SellerDashboardPage from "../pages/seller/SellerDashboardPage";
 
+import DashboardLayout from "../components/layout/DashboardLayout";
 import ProtectedRoute from "./ProtectedRoute";
 import RoleProtectedRoute from "./RoleProtectedRoute";
 
@@ -33,31 +34,33 @@ export default function AppRoutes() {
       />
 
       <Route element={<ProtectedRoute />}>
-        <Route
-          element={<RoleProtectedRoute allowedRoles={["BUYER"]} />}
-        >
+        <Route element={<DashboardLayout />}>
           <Route
-            path="/buyer/dashboard"
-            element={<BuyerDashboardPage />}
-          />
-        </Route>
+            element={<RoleProtectedRoute allowedRoles={["BUYER"]} />}
+          >
+            <Route
+              path="/buyer/dashboard"
+              element={<BuyerDashboardPage />}
+            />
+          </Route>
 
-        <Route
-          element={<RoleProtectedRoute allowedRoles={["SELLER"]} />}
-        >
           <Route
-            path="/seller/dashboard"
-            element={<SellerDashboardPage />}
-          />
-        </Route>
+            element={<RoleProtectedRoute allowedRoles={["SELLER"]} />}
+          >
+            <Route
+              path="/seller/dashboard"
+              element={<SellerDashboardPage />}
+            />
+          </Route>
 
-        <Route
-          element={<RoleProtectedRoute allowedRoles={["ADMIN"]} />}
-        >
           <Route
-            path="/admin/dashboard"
-            element={<AdminDashboardPage />}
-          />
+            element={<RoleProtectedRoute allowedRoles={["ADMIN"]} />}
+          >
+            <Route
+              path="/admin/dashboard"
+              element={<AdminDashboardPage />}
+            />
+          </Route>
         </Route>
       </Route>
 
