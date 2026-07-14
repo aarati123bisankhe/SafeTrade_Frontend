@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 type AlertVariant = "error" | "success" | "info";
 
-type AlertProps = {
+type AlertProps = { //alert component props
   title?: string;
   children: ReactNode;
   variant?: AlertVariant;
