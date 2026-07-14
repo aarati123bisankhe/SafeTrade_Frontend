@@ -1,5 +1,6 @@
 import api from "./api";
 import type {
+  ApiResponse,
   AuthSuccessResponse,
   LoginRequest,
   LoginResponse,
@@ -26,64 +27,116 @@ const clearAuthenticatedSession = (): void => {
   sessionStorage.removeItem(CURRENT_USER_KEY);
 };
 
-const isAuthSuccessResponse = (
-  response: LoginResponse
-): response is AuthSuccessResponse => {
-  return "accessToken" in response;
+const mapUser = (user: User): User => {
+  return {
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    role: user.role,
+    isEmailVerified: user.isEmailVerified,
+    totpEnabled: user.totpEnabled,
+    avatarUrl: user.avatarUrl,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
+};
+
+const normalizeAuthSuccess = (payload: {
+  token: string;
+  user: User;
+}): AuthSuccessResponse => {
+  return {
+    accessToken: payload.token,
+    user: mapUser(payload.user),
+  };
 };
 
 export const authService = {
   async register(payload: RegisterRequest): Promise<User> {
-    const { data } = await api.post<User>("/auth/register", payload);
+    const { data } = await api.post<
+      ApiResponse<{ user: User; token: string }>
+    >("/auth/register", payload);
 
-    return data;
+    return mapUser(data.data.user);
   },
 
   async login(payload: LoginRequest): Promise<LoginResponse> {
-    const { data } = await api.post<LoginResponse>("/auth/login", payload);
+    const { data } = await api.post<
+      ApiResponse<
+        | { user: User; token: string }
+        | { user: User; requiresTotp: true; mfaToken: string }
+      >
+    >("/auth/login", payload);
 
-    if (isAuthSuccessResponse(data)) {
-      persistAuthenticatedSession(data.accessToken, data.user);
+    const responseData = data.data;
+
+    if ("token" in responseData) {
+      const normalizedResponse = normalizeAuthSuccess(responseData);
+
+      persistAuthenticatedSession(
+        normalizedResponse.accessToken,
+        normalizedResponse.user
+      );
       sessionStorage.removeItem(MFA_TOKEN_KEY);
-    } else {
-      sessionStorage.setItem(MFA_TOKEN_KEY, data.mfaToken);
+
+      return normalizedResponse;
     }
 
-    return data;
+    const totpChallenge = {
+      requiresTotp: true as const,
+      mfaToken: responseData.mfaToken,
+      user: mapUser(responseData.user),
+    };
+
+    sessionStorage.setItem(MFA_TOKEN_KEY, totpChallenge.mfaToken);
+
+    return totpChallenge;
   },
 
   async verifyTotp(
     payload: TotpVerificationRequest
   ): Promise<AuthSuccessResponse> {
-    const { data } = await api.post<AuthSuccessResponse>(
+    const { data } = await api.post<ApiResponse<{ user: User; token: string }>>(
       "/auth/totp/verify-login",
       payload
     );
 
-    persistAuthenticatedSession(data.accessToken, data.user);
+    const normalizedResponse = normalizeAuthSuccess(data.data);
+
+    persistAuthenticatedSession(
+      normalizedResponse.accessToken,
+      normalizedResponse.user
+    );
     sessionStorage.removeItem(MFA_TOKEN_KEY);
 
-    return data;
+    return normalizedResponse;
   },
 
   async exchangeGoogleCode(code: string): Promise<OAuthExchangeResponse> {
-    const { data } = await api.post<OAuthExchangeResponse>(
+    const { data } = await api.post<ApiResponse<{ user: User; token: string }>>(
       "/auth/oauth/exchange",
       { code }
     );
 
-    persistAuthenticatedSession(data.accessToken, data.user);
+    const normalizedResponse = normalizeAuthSuccess(data.data);
+
+    persistAuthenticatedSession(
+      normalizedResponse.accessToken,
+      normalizedResponse.user
+    );
     sessionStorage.removeItem(MFA_TOKEN_KEY);
 
-    return data;
+    return normalizedResponse;
   },
 
   async getCurrentUser(): Promise<User> {
-    const { data } = await api.get<User>("/auth/me");
+    const { data } = await api.get<ApiResponse<User>>("/auth/me");
 
-    sessionStorage.setItem(CURRENT_USER_KEY, JSON.stringify(data));
+    const currentUser = mapUser(data.data);
 
-    return data;
+    sessionStorage.setItem(CURRENT_USER_KEY, JSON.stringify(currentUser));
+
+    return currentUser;
   },
 
   getStoredUser(): User | null {

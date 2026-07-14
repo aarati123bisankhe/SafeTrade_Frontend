@@ -2,23 +2,20 @@ export type UserRole = "BUYER" | "SELLER" | "ADMIN";
 
 export interface User {
   id: string;
+  username: string;
   email: string;
   role: UserRole;
-  name?: string;
-  firstName?: string;
-  lastName?: string;
   isEmailVerified?: boolean;
-  isTotpEnabled?: boolean;
+  totpEnabled?: boolean;
   avatarUrl?: string;
   createdAt?: string;
   updatedAt?: string;
 }
 
 export interface RegisterRequest {
-  name: string;
+  username: string;
   email: string;
   password: string;
-  role: UserRole;
 }
 
 export interface LoginRequest {
@@ -48,6 +45,21 @@ export interface OAuthExchangeResponse {
   accessToken: string;
   user: User;
   isNewUser?: boolean;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+}
+
+export interface ApiErrorResponse {
+  success?: boolean;
+  message?: string;
+  errors?: {
+    fieldErrors?: Record<string, string[] | undefined>;
+    formErrors?: string[];
+  };
 }
 
 export interface AuthContextType {
