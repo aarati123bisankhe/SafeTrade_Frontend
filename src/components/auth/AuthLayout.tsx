@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 
-type AuthLayoutProps = {
+type AuthLayoutProps = { //auth layout component props
   title: string;
   description: string;
   children: ReactNode;
