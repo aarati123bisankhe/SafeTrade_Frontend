@@ -49,7 +49,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     void restoreSession();
   }, []);
 
-  const register = async (data: RegisterRequest) => { //return authService.register(data);
+  const register = async (data: RegisterRequest) => { 
     return authService.register(data);
   };
 
@@ -72,7 +72,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return response;
   };
 
-  const verifyTotp = async (data: TotpVerificationRequest) => {
+  const verifyTotp = async (data: TotpVerificationRequest) => {//validate the TOTP code and get the access token
     const response = await authService.verifyTotp(data);
 
     authService.saveAccessToken(response.accessToken);
