@@ -83,7 +83,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return response;
   };
 
-  const exchangeGoogleCode = async (code: string) => { //exchangeGoogleCode function to handle Google OAuth code exchange
+  const exchangeGoogleCode = async (code: string) => { 
     const response = await authService.exchangeGoogleCode(code);
 
     authService.saveAccessToken(response.accessToken);
@@ -97,7 +97,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   };
 
-  const refreshCurrentUser = async () => {
+  const refreshCurrentUser = async () => { // Refresh the current user data from the server
     const currentUser = await authService.getCurrentUser();
     setUser(currentUser);
 
