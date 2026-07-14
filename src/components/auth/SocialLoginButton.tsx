@@ -2,7 +2,7 @@ import Button from "../common/Button";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-export default function SocialLoginButton() {
+export default function SocialLoginButton() { //social login button component
   const handleGoogleSignIn = () => {
     if (!API_BASE_URL) {
       return;
