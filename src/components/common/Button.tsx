@@ -1,5 +1,5 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link, type LinkProps } from "react-router-dom";
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "success";
 type ButtonSize = "sm" | "md" | "lg";
@@ -12,21 +12,26 @@ type BaseButtonProps = {
   className?: string;
 };
 
-type ButtonProps = BaseButtonProps &
+type NativeButtonProps = BaseButtonProps &
   ButtonHTMLAttributes<HTMLButtonElement> & {
     to?: never;
   };
 
-type LinkButtonProps = BaseButtonProps & {
-  to: string;
-};
+type RouterButtonProps = BaseButtonProps &
+  Omit<LinkProps, "className" | "children">;
+
+function isRouterButtonProps(
+  props: NativeButtonProps | RouterButtonProps
+): props is RouterButtonProps {
+  return "to" in props && props.to !== undefined;
+}
 
 function getButtonClassName({
   variant = "primary",
   size = "md",
   fullWidth = false,
   className = "",
-}: BaseButtonProps) {
+}: Omit<BaseButtonProps, "children">) {
   return [
     "ui-button",
     `ui-button--${variant}`,
@@ -38,15 +43,23 @@ function getButtonClassName({
     .join(" ");
 }
 
-export default function Button(props: ButtonProps | LinkButtonProps) {
-  if ("to" in props && typeof props.to === "string") {
-    const { children, to, variant, size, fullWidth, className } = props;
+export default function Button(props: NativeButtonProps | RouterButtonProps) {
+  if (isRouterButtonProps(props)) {
+    const {
+      children,
+      to,
+      variant,
+      size,
+      fullWidth,
+      className,
+      ...linkProps
+    } = props;
 
     return (
       <Link
         to={to}
+        {...linkProps}
         className={getButtonClassName({
-          children,
           variant,
           size,
           fullWidth,
@@ -72,7 +85,6 @@ export default function Button(props: ButtonProps | LinkButtonProps) {
     <button
       type={type}
       className={getButtonClassName({
-        children,
         variant,
         size,
         fullWidth,
