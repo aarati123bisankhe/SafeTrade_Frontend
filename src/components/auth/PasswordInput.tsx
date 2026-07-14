@@ -1,8 +1,8 @@
 import { useState } from "react";
 
-import Input from "../common/Input";
+import Input from "../common/Input"; 
 
-type PasswordInputProps = {
+type PasswordInputProps = { //password input component props
   label: string;
   value: string;
   onChange: (value: string) => void;
