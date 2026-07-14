@@ -5,7 +5,7 @@ type InputProps = InputHTMLAttributes<HTMLInputElement> & {
   helperText?: string;
 };
 
-export default function Input({
+export default function Input({ //input component
   label,
   helperText,
   id,
