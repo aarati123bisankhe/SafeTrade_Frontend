@@ -109,13 +109,31 @@ const transactions: Transaction[] = [
     badge: "info",
   },
   {
-    item: "Office Chair",
-    seller: "homecraft",
-    price: "Rs. 18,400",
+    item: "Wireless Mouse",
+    seller: "gadgethub",
+    price: "Rs. 2,300",
     image:
-      "https://images.unsplash.com/photo-1505843513577-22bb7d21e455?auto=format&fit=crop&w=320&q=80",
-    status: "Delivered",
-    badge: "success",
+      "https://images.unsplash.com/photo-1527814050087-3793815479db?auto=format&fit=crop&w=320&q=80",
+    status: "Payment Held",
+    badge: "warning",
+  },
+  {
+    item: "Bluetooth Speaker",
+    seller: "soundspot",
+    price: "Rs. 6,700",
+    image:
+      "https://images.unsplash.com/photo-1589003077984-894e133dabab?auto=format&fit=crop&w=320&q=80",
+    status: "Seller Accepted",
+    badge: "info",
+  },
+  {
+    item: 'Mountain Bike Helmet',
+    seller: "ridegear",
+    price: "Rs. 5,900",
+    image:
+      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=320&q=80",
+    status: "Shipped",
+    badge: "info",
   },
 ];
 
