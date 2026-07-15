@@ -19,7 +19,11 @@ export default function AuthLayout({
       <div className="auth-layout">
         <section className="auth-layout__visual">
           <Link to="/" className="auth-layout__brand">
-            <span className="auth-layout__brand-mark">S</span>
+            <img
+              src="/safetrade-logo.png"
+              alt="SafeTrade logo"
+              className="auth-layout__brand-mark"
+            />
             <div>
               <strong>SafeTrade</strong>
               <span>Protected local marketplace</span>

@@ -45,7 +45,11 @@ export default function Sidebar() {
   return (
     <aside className="dashboard-sidebar ui-card">
       <div className="dashboard-sidebar__brand">
-        <span className="dashboard-sidebar__logo">S</span>
+        <img
+          src="/safetrade-logo.png"
+          alt="SafeTrade logo"
+          className="dashboard-sidebar__logo"
+        />
         <div>
           <strong>SafeTrade</strong>
           <span>{user.role.toLowerCase()} workspace</span>

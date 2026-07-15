@@ -33,7 +33,7 @@ export default function DashboardHeader() {
 
   return (
     <header className="dashboard-header ui-card">
-      <div>
+      <div className="dashboard-header__title-block">
         <span className="section-tag">Protected workspace</span>
         <h2>{getTitle(location.pathname)}</h2>
       </div>

@@ -3,7 +3,7 @@ type OnboardingProgressProps = {
   totalSteps: number;
 };
 
-export default function OnboardingProgress({ //onboarding progress component
+export default function OnboardingProgress({
   currentStep,
   totalSteps,
 }: OnboardingProgressProps) {

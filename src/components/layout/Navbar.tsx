@@ -7,7 +7,11 @@ export default function Navbar() {
     <header className="navbar">
       <div className="navbar__brand">
         <Link to="/" className="navbar__logo">
-          <span className="navbar__logo-mark">S</span>
+          <img
+            src="/safetrade-logo.png"
+            alt="SafeTrade logo"
+            className="navbar__logo-mark"
+          />
           <div>
             <strong>SafeTrade</strong>
             <span>Secure local marketplace</span>
