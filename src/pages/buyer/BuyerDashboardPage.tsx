@@ -317,7 +317,7 @@ export default function BuyerDashboardPage() {
           </p>
           <div className="buyer-hero__actions">
             <Button to="/products">Browse Products</Button>
-            <Button to="/buyer/dashboard#purchases" variant="secondary">
+            <Button to="/my-purchases" variant="secondary">
               View Purchases
             </Button>
           </div>
@@ -358,7 +358,7 @@ export default function BuyerDashboardPage() {
               <h3>Recent Transactions</h3>
               <p>Follow the escrow workflow from payment to delivery.</p>
             </div>
-            <Button to="/buyer/dashboard#purchases" variant="ghost" size="sm">
+            <Button to="/my-purchases" variant="ghost" size="sm">
               View All
             </Button>
           </div>
@@ -418,7 +418,7 @@ export default function BuyerDashboardPage() {
                 <strong>2.4 days</strong>
               </div>
             </div>
-            <Button to="/buyer/dashboard#purchases" variant="secondary">
+            <Button to="/my-purchases" variant="secondary">
               View Protected Transactions
             </Button>
           </div>

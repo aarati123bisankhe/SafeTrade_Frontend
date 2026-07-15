@@ -16,7 +16,7 @@ const footerColumns = [
     title: "Buying",
     links: [
       { label: "How Escrow Works", to: "/onboarding#escrow" },
-      { label: "My Purchases", to: "/buyer/dashboard#purchases" },
+      { label: "My Purchases", to: "/my-purchases" },
       { label: "Transaction Protection", to: "/buyer/dashboard#protection" },
       { label: "Raise a Dispute", to: "/buyer/dashboard#disputes" },
       { label: "Buyer Safety", to: "/onboarding#buyer-safety" },

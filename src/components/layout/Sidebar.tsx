@@ -10,7 +10,7 @@ const navigationByRole: Record<
   BUYER: [
     { label: "Dashboard", to: "/buyer/dashboard" },
     { label: "Browse Products", to: "/products" },
-    { label: "My Purchases", to: "/buyer/dashboard#purchases" },
+    { label: "My Purchases", to: "/my-purchases" },
     { label: "Disputes", to: "/buyer/dashboard#disputes" },
     { label: "Profile", to: "/buyer/dashboard#profile" },
   ],

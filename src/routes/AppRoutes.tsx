@@ -6,6 +6,7 @@ import OAuthCallbackPage from "../pages/auth/OAuthCallbackPage";
 import RegisterPage from "../pages/auth/RegisterPage";
 import TotpVerificationPage from "../pages/auth/TotpVerificationPage";
 import BuyerDashboardPage from "../pages/buyer/BuyerDashboardPage";
+import MyPurchasesPage from "../pages/buyer/MyPurchasesPage";
 import NotFoundPage from "../pages/errors/NotFoundPage";
 import ProductDetailsPage from "../pages/products/ProductDetailsPage";
 import ProductsPage from "../pages/products/ProductsPage";
@@ -41,6 +42,10 @@ export default function AppRoutes() {
             <Route
               path="/buyer/dashboard"
               element={<BuyerDashboardPage />}
+            />
+            <Route
+              path="/my-purchases"
+              element={<MyPurchasesPage />}
             />
           </Route>
 
