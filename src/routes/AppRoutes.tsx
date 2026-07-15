@@ -11,6 +11,7 @@ import DisputesPage from "../pages/buyer/DisputesPage";
 import MyPurchasesPage from "../pages/buyer/MyPurchasesPage";
 import NewDisputePage from "../pages/buyer/NewDisputePage";
 import NotFoundPage from "../pages/errors/NotFoundPage";
+import ProfilePage from "../pages/profile/ProfilePage";
 import ProductDetailsPage from "../pages/products/ProductDetailsPage";
 import ProductsPage from "../pages/products/ProductsPage";
 import LandingPage from "../pages/public/LandingPage";
@@ -39,6 +40,10 @@ export default function AppRoutes() {
 
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
+          <Route
+            path="/profile"
+            element={<ProfilePage />}
+          />
           <Route
             element={<RoleProtectedRoute allowedRoles={["BUYER"]} />}
           >

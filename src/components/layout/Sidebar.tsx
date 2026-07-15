@@ -12,7 +12,7 @@ const navigationByRole: Record<
     { label: "Browse Products", to: "/products" },
     { label: "My Purchases", to: "/my-purchases" },
     { label: "Disputes", to: "/disputes" },
-    { label: "Profile", to: "/buyer/dashboard#profile" },
+    { label: "Profile", to: "/profile" },
   ],
   SELLER: [
     { label: "Dashboard", to: "/seller/dashboard" },
@@ -20,7 +20,7 @@ const navigationByRole: Record<
     { label: "Add Product", to: "/seller/dashboard#add-product" },
     { label: "My Sales", to: "/seller/dashboard#sales" },
     { label: "Disputes", to: "/seller/dashboard#disputes" },
-    { label: "Profile", to: "/seller/dashboard#profile" },
+    { label: "Profile", to: "/profile" },
   ],
   ADMIN: [
     { label: "Dashboard", to: "/admin/dashboard" },

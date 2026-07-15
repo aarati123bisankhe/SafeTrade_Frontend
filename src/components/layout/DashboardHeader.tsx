@@ -76,10 +76,10 @@ export default function DashboardHeader() {
           <div className="dashboard-navbar__actions">
             <Badge variant="success">{user.role}</Badge>
             <NavLink
-              to={`${location.pathname}#profile`}
+              to="/profile"
               className={[
                 "dashboard-nav-link",
-                location.hash === "#profile" ? "dashboard-nav-link--active" : "",
+                location.pathname === "/profile" ? "dashboard-nav-link--active" : "",
               ]
                 .filter(Boolean)
                 .join(" ")}
