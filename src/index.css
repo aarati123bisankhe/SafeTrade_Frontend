@@ -2288,7 +2288,7 @@ ul {
   width: 100%;
   max-width: 1500px;
   margin: 0 auto;
-  padding: 8px 32px 56px;
+  padding: 28px 32px 56px;
   box-sizing: border-box;
 }
 
@@ -2314,19 +2314,6 @@ ul {
 .marketplace-hero__copy {
   display: grid;
   gap: 14px;
-}
-
-.marketplace-dashboard-link {
-  display: inline-flex;
-  align-items: center;
-  width: fit-content;
-  color: var(--color-primary-blue);
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.marketplace-dashboard-link:hover {
-  text-decoration: underline;
 }
 
 .marketplace-hero__copy h1 {
@@ -2627,8 +2614,14 @@ ul {
 }
 
 .marketplace-empty-state {
+  display: grid;
   justify-items: start;
-  gap: 14px;
+  gap: 22px;
+}
+
+.marketplace-empty-state h3,
+.marketplace-empty-state p {
+  margin: 0;
 }
 
 .marketplace-load-more {

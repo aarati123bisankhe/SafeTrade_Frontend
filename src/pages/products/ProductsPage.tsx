@@ -6,7 +6,7 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 
 import Alert from "../../components/common/Alert";
 import Badge from "../../components/common/Badge";
@@ -16,6 +16,7 @@ import ProductCard from "../../components/products/ProductCard";
 import ProductFilters, {
   type ProductFiltersValue,
 } from "../../components/products/ProductFilters";
+import DashboardHeader from "../../components/layout/DashboardHeader";
 import DashboardFooter from "../../components/layout/DashboardFooter";
 import productService from "../../services/product.service";
 import {
@@ -433,21 +434,13 @@ export default function ProductsPage() {
 
   return (
     <div className="marketplace-page">
-      <div className="dashboard-trust-strip">
-        <div className="dashboard-trust-strip__inner">
-          <span>Protected transactions with escrow security</span>
-          <span>Trusted local listings backed by SafeTrade</span>
-        </div>
-      </div>
+      <DashboardHeader />
 
       <main className="marketplace-main">
         <div className="marketplace-main__inner">
           <section className="marketplace-hero">
             <Card className="marketplace-hero__card">
               <div className="marketplace-hero__copy">
-                <Link to="/buyer/dashboard" className="marketplace-dashboard-link">
-                  ← Return to Dashboard
-                </Link>
                 <Badge variant="info">Browse Products</Badge>
                 <h1>Browse Products</h1>
                 <p>Find trusted local items protected by SafeTrade escrow.</p>
