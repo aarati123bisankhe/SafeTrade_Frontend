@@ -44,6 +44,7 @@ export type Product = {
   id: string;
   name: string;
   description: string;
+  imageUrl?: string | null;
   price: number;
   category: Exclude<ProductCategory, "ALL">;
   condition: Exclude<ProductCondition, "ALL">;

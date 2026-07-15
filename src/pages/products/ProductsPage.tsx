@@ -1,4 +1,12 @@
-import { startTransition, useEffect, useState, type FormEvent } from "react";
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type FormEvent,
+} from "react";
+import { Link, useLocation } from "react-router-dom";
 
 import Alert from "../../components/common/Alert";
 import Badge from "../../components/common/Badge";
@@ -18,8 +26,18 @@ import {
 import { getApiErrorMessage } from "../../utils/apiError";
 
 const PAGE_SIZE = 8;
+const FAVORITES_STORAGE_KEY = "safetrade-browse-favorites";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const hashCategoryMap: Record<string, string> = {
+  "#books": ProductCategory.BOOKS,
+  "#electronics": ProductCategory.ELECTRONICS,
+  "#clothing": ProductCategory.CLOTHING,
+  "#furniture": ProductCategory.FURNITURE,
+  "#handmade": ProductCategory.HANDMADE,
+};
 
 const categoryCards = [
+  { value: ProductCategory.ALL, title: "All", icon: "🛍️" },
   { value: ProductCategory.BOOKS, title: "Books", icon: "📚" },
   { value: ProductCategory.ELECTRONICS, title: "Electronics", icon: "💻" },
   { value: ProductCategory.CLOTHING, title: "Clothing", icon: "🧥" },
@@ -67,8 +85,13 @@ function getPriceRangeMatch(price: number, range: string) {
   }
 }
 
+function normalizeText(value?: string | null) {
+  return value?.toLowerCase() ?? "";
+}
+
 function getCategoryArt(category: string) {
   const palette: Record<string, { start: string; end: string; accent: string; glyph: string }> = {
+    ALL: { start: "#eff6ff", end: "#e0f2fe", accent: "#2563eb", glyph: "ALL" },
     BOOKS: { start: "#eff6ff", end: "#dbeafe", accent: "#2563eb", glyph: "BOOKS" },
     ELECTRONICS: { start: "#ecfeff", end: "#cffafe", accent: "#0891b2", glyph: "TECH" },
     CLOTHING: { start: "#fdf2f8", end: "#fce7f3", accent: "#db2777", glyph: "STYLE" },
@@ -99,6 +122,71 @@ function getCategoryArt(category: string) {
   `;
 
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+function getProductArt(product: Product) {
+  if (product.imageUrl?.trim()) {
+    return resolveProductImage(product.imageUrl);
+  }
+
+  const name = product.name.toLowerCase();
+  const accentByCategory: Record<string, { start: string; end: string; accent: string }> = {
+    BOOKS: { start: "#eff6ff", end: "#dbeafe", accent: "#1d4ed8" },
+    ELECTRONICS: { start: "#ecfeff", end: "#cffafe", accent: "#0891b2" },
+    CLOTHING: { start: "#fdf2f8", end: "#fce7f3", accent: "#db2777" },
+    FURNITURE: { start: "#fef3c7", end: "#fde68a", accent: "#b45309" },
+    HANDMADE: { start: "#ecfccb", end: "#d9f99d", accent: "#65a30d" },
+    OTHER: { start: "#f8fafc", end: "#e2e8f0", accent: "#475569" },
+  };
+
+  let label = "ITEM";
+  if (name.includes("headphone") || name.includes("earbud")) label = "AUDIO";
+  else if (name.includes("phone") || name.includes("iphone")) label = "PHONE";
+  else if (name.includes("laptop") || name.includes("computer")) label = "LAPTOP";
+  else if (name.includes("book") || name.includes("novel")) label = "BOOK";
+  else if (name.includes("shirt") || name.includes("jacket") || name.includes("hoodie")) label = "WEAR";
+  else if (name.includes("table") || name.includes("chair") || name.includes("sofa")) label = "HOME";
+  else if (name.includes("bag") || name.includes("handmade") || name.includes("craft")) label = "CRAFT";
+
+  const palette = accentByCategory[product.category] ?? accentByCategory.OTHER;
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420">
+      <defs>
+        <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="${palette.start}" />
+          <stop offset="100%" stop-color="${palette.end}" />
+        </linearGradient>
+        <linearGradient id="card" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#ffffff" stop-opacity="0.98" />
+          <stop offset="100%" stop-color="#f8fafc" stop-opacity="0.92" />
+        </linearGradient>
+      </defs>
+      <rect width="640" height="420" rx="36" fill="url(#bg)" />
+      <circle cx="520" cy="92" r="80" fill="${palette.accent}" fill-opacity="0.14" />
+      <circle cx="110" cy="332" r="96" fill="${palette.accent}" fill-opacity="0.1" />
+      <rect x="118" y="76" width="404" height="268" rx="34" fill="url(#card)" />
+      <rect x="158" y="112" width="324" height="152" rx="24" fill="${palette.accent}" fill-opacity="0.12" />
+      <text x="320" y="200" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="44" font-weight="800" fill="${palette.accent}">${label}</text>
+      <rect x="160" y="286" width="210" height="16" rx="8" fill="${palette.accent}" fill-opacity="0.24" />
+      <rect x="160" y="314" width="138" height="14" rx="7" fill="${palette.accent}" fill-opacity="0.16" />
+    </svg>
+  `;
+
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+function resolveProductImage(imageUrl: string) {
+  if (
+    imageUrl.startsWith("data:") ||
+    imageUrl.startsWith("http://") ||
+    imageUrl.startsWith("https://")
+  ) {
+    return imageUrl;
+  }
+
+  const apiOrigin = API_BASE_URL ? new URL(API_BASE_URL).origin : "http://localhost:5001";
+
+  return new URL(imageUrl, apiOrigin).toString();
 }
 
 function getSellerName(product: Product) {
@@ -141,30 +229,73 @@ function ProductSkeleton() {
 }
 
 export default function ProductsPage() {
+  const location = useLocation();
   const [products, setProducts] = useState<Product[]>([]);
   const [filters, setFilters] = useState(initialFilters);
-  const [draftSearchTerm, setDraftSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState(initialFilters.searchTerm);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
-  useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        const data = await productService.getAllProducts();
-        setProducts(data);
-      } catch (error) {
-        setErrorMessage(
-          getApiErrorMessage(error, "We couldn't load products right now.")
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const loadProducts = useCallback(async () => {
+    setIsLoading(true);
+    setErrorMessage("");
 
-    void loadProducts();
+    try {
+      const data = await productService.getAllProducts();
+      setProducts(data.filter((product) => product.status !== "REMOVED"));
+    } catch (error) {
+      setErrorMessage(
+        getApiErrorMessage(error, "We couldn't load products right now.")
+      );
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void loadProducts();
+  }, [loadProducts]);
+
+  useEffect(() => {
+    const categoryFromHash = hashCategoryMap[location.hash.toLowerCase()];
+
+    if (!categoryFromHash) {
+      return;
+    }
+
+    startTransition(() => {
+      setFilters((current) => ({
+        ...current,
+        category: categoryFromHash,
+      }));
+    });
+  }, [location.hash]);
+
+  useEffect(() => {
+    const storedFavorites = sessionStorage.getItem(FAVORITES_STORAGE_KEY);
+
+    if (!storedFavorites) {
+      return;
+    }
+
+    try {
+      const parsedFavorites = JSON.parse(storedFavorites) as unknown;
+
+      if (Array.isArray(parsedFavorites)) {
+        setFavoriteIds(
+          parsedFavorites.filter((value): value is string => typeof value === "string")
+        );
+      }
+    } catch {
+      sessionStorage.removeItem(FAVORITES_STORAGE_KEY);
+    }
+  }, []);
+
+  useEffect(() => {
+    sessionStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(favoriteIds));
+  }, [favoriteIds]);
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
@@ -177,69 +308,80 @@ export default function ProductsPage() {
     filters.sortBy,
   ]);
 
-  const locationOptions = [
-    { label: "All", value: "ALL" },
-    ...Array.from(new Set(products.map((product) => product.location)))
-      .sort((left, right) => left.localeCompare(right))
-      .map((location) => ({
-        label: location,
-        value: location,
-      })),
-  ];
+  const locationOptions = useMemo(
+    () => [
+      { label: "All", value: "ALL" },
+      ...Array.from(
+        new Set(
+          products
+            .map((product) => product.location.trim())
+            .filter(Boolean)
+        )
+      )
+        .sort((left, right) => left.localeCompare(right))
+        .map((location) => ({
+          label: location,
+          value: location,
+        })),
+    ],
+    [products]
+  );
 
-  const normalizedSearch = filters.searchTerm.trim().toLowerCase();
+  const filteredProducts = useMemo(() => {
+    const normalizedSearch = filters.searchTerm.trim().toLowerCase();
 
-  const filteredProducts = products
-    .filter((product) => {
-      if (filters.category !== ProductCategory.ALL && product.category !== filters.category) {
-        return false;
-      }
+    return products
+      .filter((product) => {
+        const matchesSearch =
+          !normalizedSearch ||
+          normalizeText(product.name).includes(normalizedSearch) ||
+          normalizeText(product.description).includes(normalizedSearch) ||
+          normalizeText(product.category).includes(normalizedSearch) ||
+          normalizeText(product.location).includes(normalizedSearch) ||
+          normalizeText(product.seller?.username).includes(normalizedSearch);
 
-      if (
-        filters.condition !== ProductCondition.ALL &&
-        product.condition !== filters.condition
-      ) {
-        return false;
-      }
+        const matchesCategory =
+          filters.category === ProductCategory.ALL ||
+          product.category === filters.category;
 
-      if (filters.location !== "ALL" && product.location !== filters.location) {
-        return false;
-      }
+        const matchesCondition =
+          filters.condition === ProductCondition.ALL ||
+          product.condition === filters.condition;
 
-      if (!getPriceRangeMatch(product.price, filters.priceRange)) {
-        return false;
-      }
+        const matchesPriceRange = getPriceRangeMatch(product.price, filters.priceRange);
 
-      if (!normalizedSearch) {
-        return true;
-      }
+        const matchesLocation =
+          filters.location === "ALL" ||
+          normalizeText(product.location.trim()) ===
+            normalizeText(filters.location.trim());
 
-      const searchableText = [
-        product.name,
-        product.description,
-        product.location,
-        getSellerName(product),
-        formatCategoryLabel(product.category),
-      ]
-        .join(" ")
-        .toLowerCase();
+        return (
+          product.status !== "REMOVED" &&
+          matchesSearch &&
+          matchesCategory &&
+          matchesCondition &&
+          matchesPriceRange &&
+          matchesLocation
+        );
+      })
+      .sort((left, right) => {
+        switch (filters.sortBy) {
+          case "PRICE_LOW_HIGH":
+            return left.price - right.price;
+          case "PRICE_HIGH_LOW":
+            return right.price - left.price;
+          default:
+            return (
+              new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
+            );
+        }
+      });
+  }, [products, filters]);
 
-      return searchableText.includes(normalizedSearch);
-    })
-    .sort((left, right) => {
-      switch (filters.sortBy) {
-        case "PRICE_LOW_HIGH":
-          return left.price - right.price;
-        case "PRICE_HIGH_LOW":
-          return right.price - left.price;
-        default:
-          return (
-            new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
-          );
-      }
-    });
-
-  const visibleProducts = filteredProducts.slice(0, visibleCount);
+  const visibleProducts = useMemo(
+    () => filteredProducts.slice(0, visibleCount),
+    [filteredProducts, visibleCount]
+  );
   const hasMoreProducts = visibleCount < filteredProducts.length;
 
   const handleFilterChange = (field: keyof ProductFiltersValue, value: string) => {
@@ -251,18 +393,19 @@ export default function ProductsPage() {
     });
   };
 
-  const applySearch = () => {
+  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
     startTransition(() => {
       setFilters((current) => ({
         ...current,
-        searchTerm: draftSearchTerm,
+        searchTerm: searchInput,
       }));
     });
   };
 
-  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    applySearch();
+  const handleSearchTermChange = (value: string) => {
+    setSearchInput(value);
   };
 
   const handleFavoriteToggle = (productId: string) => {
@@ -272,6 +415,21 @@ export default function ProductsPage() {
         : [...current, productId]
     );
   };
+
+  const emptyStateContent =
+    products.length === 0
+      ? {
+          badge: "No products yet",
+          title: "No products are available right now.",
+          description:
+            "Check back soon for new listings protected by SafeTrade escrow.",
+        }
+      : {
+          badge: "No matches",
+          title: "No products match your filters.",
+          description:
+            "Try clearing a filter, broadening the search term, or switching to another category.",
+        };
 
   return (
     <div className="marketplace-page">
@@ -287,6 +445,9 @@ export default function ProductsPage() {
           <section className="marketplace-hero">
             <Card className="marketplace-hero__card">
               <div className="marketplace-hero__copy">
+                <Link to="/buyer/dashboard" className="marketplace-dashboard-link">
+                  ← Return to Dashboard
+                </Link>
                 <Badge variant="info">Browse Products</Badge>
                 <h1>Browse Products</h1>
                 <p>Find trusted local items protected by SafeTrade escrow.</p>
@@ -294,19 +455,12 @@ export default function ProductsPage() {
 
               <div className="marketplace-hero__search">
                 <ProductFilters
-                  values={{
-                    ...filters,
-                    searchTerm: draftSearchTerm,
-                  }}
-                  categoryShortcuts={[
-                    { label: "All", value: ProductCategory.ALL },
-                    ...categoryCards.map((category) => ({
-                      label: category.title,
-                      value: category.value,
-                    })),
-                  ]}
+                  values={{ ...filters, searchTerm: searchInput }}
+                  categoryShortcuts={categoryCards.map((category) => ({
+                    label: category.title,
+                    value: category.value,
+                  }))}
                   categoryOptions={[
-                    { label: "All", value: ProductCategory.ALL },
                     ...categoryCards.map((category) => ({
                       label: category.title,
                       value: category.value,
@@ -333,7 +487,7 @@ export default function ProductsPage() {
                     { label: "Price: Low to High", value: "PRICE_LOW_HIGH" },
                     { label: "Price: High to Low", value: "PRICE_HIGH_LOW" },
                   ]}
-                  onSearchTermChange={setDraftSearchTerm}
+                  onSearchTermChange={handleSearchTermChange}
                   onFieldChange={handleFilterChange}
                   onSearch={handleSearchSubmit}
                 />
@@ -373,9 +527,20 @@ export default function ProductsPage() {
             </div>
 
             {errorMessage ? (
-              <Alert variant="error" title="Products unavailable">
-                {errorMessage}
-              </Alert>
+              <div className="marketplace-empty-state">
+                <Alert variant="error" title="Products unavailable">
+                  {errorMessage}
+                </Alert>
+                <div className="marketplace-load-more">
+                  <button
+                    type="button"
+                    className="marketplace-load-more__button"
+                    onClick={() => void loadProducts()}
+                  >
+                    Retry
+                  </button>
+                </div>
+              </div>
             ) : null}
 
             {isLoading ? (
@@ -388,12 +553,9 @@ export default function ProductsPage() {
 
             {!isLoading && !errorMessage && filteredProducts.length === 0 ? (
               <Card className="marketplace-empty-state">
-                <Badge variant="info">No matches</Badge>
-                <h3>No products match your filters.</h3>
-                <p>
-                  Try clearing a filter, broadening the search term, or switching
-                  to another category.
-                </p>
+                <Badge variant="info">{emptyStateContent.badge}</Badge>
+                <h3>{emptyStateContent.title}</h3>
+                <p>{emptyStateContent.description}</p>
               </Card>
             ) : null}
 
@@ -404,7 +566,8 @@ export default function ProductsPage() {
                     <ProductCard
                       key={product.id}
                       product={product}
-                      image={getCategoryArt(product.category)}
+                      image={getProductArt(product)}
+                      categoryLabel={formatCategoryLabel(product.category)}
                       conditionLabel={formatConditionLabel(product.condition)}
                       sellerName={getSellerName(product)}
                       sellerRatingLabel={getSellerRatingLabel(product)}
@@ -424,9 +587,7 @@ export default function ProductsPage() {
                     >
                       Load More
                     </button>
-                  ) : (
-                    <span>You&apos;ve reached the end of the current results.</span>
-                  )}
+                  ) : null}
                 </div>
               </>
             ) : null}

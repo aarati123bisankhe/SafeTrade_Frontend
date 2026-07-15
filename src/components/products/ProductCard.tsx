@@ -5,6 +5,7 @@ import type { Product, ProductStatus } from "../../types/product.types";
 type ProductCardProps = {
   product: Product;
   image: string;
+  categoryLabel: string;
   conditionLabel: string;
   sellerName: string;
   sellerRatingLabel: string;
@@ -29,6 +30,7 @@ function getStatusBadgeVariant(status: ProductStatus) {
 export default function ProductCard({
   product,
   image,
+  categoryLabel,
   conditionLabel,
   sellerName,
   sellerRatingLabel,
@@ -75,7 +77,11 @@ export default function ProductCard({
         <p>{product.description}</p>
 
         <div className="marketplace-product-card__meta">
+          <span>Category: {categoryLabel}</span>
+          <span>Condition: {conditionLabel}</span>
+          <span>Location: {product.location}</span>
           <span>Seller: {sellerName}</span>
+          <span>Status: {product.status}</span>
           <span>★ {sellerRatingLabel}</span>
         </div>
 

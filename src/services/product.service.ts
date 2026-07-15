@@ -10,7 +10,7 @@ type ApiResponse<T> = {
 
 const productService = {
   async getAllProducts() {
-    const { data } = await api.get<ApiResponse<Product[]>>("/api/products");
+    const { data } = await api.get<ApiResponse<Product[]>>("/products");
 
     return data.data;
   },
