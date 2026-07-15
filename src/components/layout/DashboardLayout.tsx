@@ -1,5 +1,6 @@
 import { Outlet } from "react-router-dom";
 
+import DashboardFooter from "./DashboardFooter";
 import DashboardHeader from "./DashboardHeader";
 
 export default function DashboardLayout() {
@@ -11,6 +12,7 @@ export default function DashboardLayout() {
           <Outlet />
         </div>
       </div>
+      <DashboardFooter />
     </div>
   );
 }
