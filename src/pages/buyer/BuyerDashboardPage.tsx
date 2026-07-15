@@ -328,21 +328,11 @@ export default function BuyerDashboardPage() {
           <div className="buyer-hero__orb buyer-hero__orb--two" />
           <div className="buyer-hero__scene">
             <div className="buyer-hero__window">
-              <span className="buyer-hero__label">SafeTrade Marketplace</span>
-              <div className="buyer-hero__illustration">
-                <div className="buyer-hero__shield">Protected</div>
-                <div className="buyer-hero__parcel" />
-                <div className="buyer-hero__cards">
-                  <div className="buyer-hero__mini-card">
-                    <strong>Buyer paid</strong>
-                    <span>Funds secured in escrow</span>
-                  </div>
-                  <div className="buyer-hero__mini-card">
-                    <strong>Seller ships</strong>
-                    <span>Release after delivery confirmation</span>
-                  </div>
-                </div>
-              </div>
+              <img
+                src="/buyer-hero-person.png"
+                alt=""
+                className="buyer-hero__image"
+              />
             </div>
           </div>
         </div>
