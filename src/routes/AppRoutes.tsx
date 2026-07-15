@@ -6,7 +6,10 @@ import OAuthCallbackPage from "../pages/auth/OAuthCallbackPage";
 import RegisterPage from "../pages/auth/RegisterPage";
 import TotpVerificationPage from "../pages/auth/TotpVerificationPage";
 import BuyerDashboardPage from "../pages/buyer/BuyerDashboardPage";
+import DisputeDetailsPage from "../pages/buyer/DisputeDetailsPage";
+import DisputesPage from "../pages/buyer/DisputesPage";
 import MyPurchasesPage from "../pages/buyer/MyPurchasesPage";
+import NewDisputePage from "../pages/buyer/NewDisputePage";
 import NotFoundPage from "../pages/errors/NotFoundPage";
 import ProductDetailsPage from "../pages/products/ProductDetailsPage";
 import ProductsPage from "../pages/products/ProductsPage";
@@ -46,6 +49,18 @@ export default function AppRoutes() {
             <Route
               path="/my-purchases"
               element={<MyPurchasesPage />}
+            />
+            <Route
+              path="/disputes"
+              element={<DisputesPage />}
+            />
+            <Route
+              path="/disputes/new"
+              element={<NewDisputePage />}
+            />
+            <Route
+              path="/disputes/:disputeId"
+              element={<DisputeDetailsPage />}
             />
           </Route>
 

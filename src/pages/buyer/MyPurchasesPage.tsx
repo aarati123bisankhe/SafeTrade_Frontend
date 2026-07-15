@@ -545,7 +545,7 @@ export default function MyPurchasesPage() {
 
                       {canRaiseDisputeForStatus ? (
                         <Button
-                          to="/buyer/dashboard#disputes"
+                          to="/disputes/new"
                           state={{ transactionId: purchase.id }}
                           variant="ghost"
                           size="sm"
@@ -556,8 +556,7 @@ export default function MyPurchasesPage() {
 
                       {isDisputed ? (
                         <Button
-                          to="/buyer/dashboard#disputes"
-                          state={{ transactionId: purchase.id }}
+                          to="/disputes"
                           variant="ghost"
                           size="sm"
                         >

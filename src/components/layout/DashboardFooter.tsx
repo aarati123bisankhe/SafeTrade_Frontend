@@ -18,7 +18,7 @@ const footerColumns = [
       { label: "How Escrow Works", to: "/onboarding#escrow" },
       { label: "My Purchases", to: "/my-purchases" },
       { label: "Transaction Protection", to: "/buyer/dashboard#protection" },
-      { label: "Raise a Dispute", to: "/buyer/dashboard#disputes" },
+      { label: "Raise a Dispute", to: "/disputes/new" },
       { label: "Buyer Safety", to: "/onboarding#buyer-safety" },
     ],
   },
@@ -37,7 +37,7 @@ const footerColumns = [
     links: [
       { label: "Help Center", to: "/onboarding#support" },
       { label: "Contact Support", to: "/onboarding#contact" },
-      { label: "Dispute Resolution", to: "/buyer/dashboard#disputes" },
+      { label: "Dispute Resolution", to: "/disputes" },
       { label: "Report a User", to: "/admin/dashboard#users" },
       { label: "Safety Guidelines", to: "/onboarding#safety" },
     ],
