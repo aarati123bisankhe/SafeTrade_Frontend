@@ -14,6 +14,12 @@ const productService = {
 
     return data.data;
   },
+
+  async getProductById(productId: string) {
+    const { data } = await api.get<ApiResponse<Product>>(`/products/${productId}`);
+
+    return data.data;
+  },
 };
 
 export default productService;
