@@ -8,7 +8,7 @@ type ApiResponse<T> = {
   data: T;
 };
 
-const productService = { // Define the productService object with methods for interacting with the product API
+const productService = { 
   async getAllProducts() {
     const { data } = await api.get<ApiResponse<Product[]>>("/products");
 
