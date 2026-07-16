@@ -14,6 +14,8 @@ import {
 } from "../../types/transaction.types";
 import { getApiErrorMessage } from "../../utils/apiError";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const SUMMARY_CARD_VARIANTS = {
   active: "info",
   escrow: "success",
@@ -141,7 +143,16 @@ function getEscrowStateLabel(status: TradeTransaction["status"]) {
 
 function getPurchaseImage(product?: Product) {
   if (product?.imageUrl?.trim()) {
-    return product.imageUrl;
+    if (
+      product.imageUrl.startsWith("data:") ||
+      product.imageUrl.startsWith("http://") ||
+      product.imageUrl.startsWith("https://")
+    ) {
+      return product.imageUrl;
+    }
+
+    const apiOrigin = API_BASE_URL ? new URL(API_BASE_URL).origin : "http://localhost:5005";
+    return new URL(product.imageUrl, apiOrigin).toString();
   }
 
   const category = product?.category ?? "OTHER";
@@ -590,6 +601,11 @@ export default function MyPurchasesPage() {
                             </Link>
                           </div>
                         ) : null}
+                        <div className="purchases-card__details-link">
+                          <Link to={`/transactions/${purchase.id}`}>
+                            View transaction details
+                          </Link>
+                        </div>
                       </div>
                     ) : null}
                   </div>

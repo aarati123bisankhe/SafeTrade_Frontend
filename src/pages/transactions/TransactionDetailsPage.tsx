@@ -27,6 +27,7 @@ export default function TransactionDetailsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAccepting, setIsAccepting] = useState(false);
   const [isShipping, setIsShipping] = useState(false);
+  const [isConfirmingReceipt, setIsConfirmingReceipt] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const loadTransaction = useCallback(async () => {
@@ -65,6 +66,14 @@ export default function TransactionDetailsPage() {
     return user.role === "SELLER" && user.id === transaction.sellerId;
   }, [transaction, user]);
 
+  const canManageAsBuyer = useMemo(() => {
+    if (!transaction || !user) {
+      return false;
+    }
+
+    return user.role === "BUYER" && user.id === transaction.buyerId;
+  }, [transaction, user]);
+
   const handleAccept = async (id: string) => {
     setIsAccepting(true);
 
@@ -97,6 +106,22 @@ export default function TransactionDetailsPage() {
     }
   };
 
+  const handleConfirmReceipt = async (id: string) => {
+    setIsConfirmingReceipt(true);
+
+    try {
+      const updated = await transactionService.confirmReceipt(id);
+      setTransaction(updated);
+      await loadTransaction();
+    } catch (error) {
+      setErrorMessage(
+        getApiErrorMessage(error, "We couldn't confirm receipt right now.")
+      );
+    } finally {
+      setIsConfirmingReceipt(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="dashboard-page">
@@ -125,6 +150,12 @@ export default function TransactionDetailsPage() {
   if (!transaction) {
     return null;
   }
+
+  const buyerDisputableStatuses: TradeTransaction["status"][] = [
+    TransactionStatus.FUNDS_HELD,
+    TransactionStatus.SELLER_ACCEPTED,
+    TransactionStatus.SHIPPED,
+  ];
 
   return (
     <div className="dashboard-page">
@@ -220,18 +251,30 @@ export default function TransactionDetailsPage() {
         <Card className="panel-card">
           <div className="panel-card__header">
             <div>
-              <h3>Buyer Details</h3>
-              <p>The buyer attached to this order.</p>
+              <h3>{canManageAsBuyer ? "Seller Details" : "Buyer Details"}</h3>
+              <p>
+                {canManageAsBuyer
+                  ? "The seller attached to this protected order."
+                  : "The buyer attached to this order."}
+              </p>
             </div>
           </div>
           <div className="purchases-card__details seller-transaction-details">
             <div>
-              <span>Buyer username</span>
-              <strong>{transaction.buyer?.username ?? "Not available"}</strong>
+              <span>{canManageAsBuyer ? "Seller username" : "Buyer username"}</span>
+              <strong>
+                {canManageAsBuyer
+                  ? transaction.seller?.username ?? "Not available"
+                  : transaction.buyer?.username ?? "Not available"}
+              </strong>
             </div>
             <div>
-              <span>Buyer email</span>
-              <strong>{transaction.buyer?.email ?? "Not available"}</strong>
+              <span>{canManageAsBuyer ? "Seller email" : "Buyer email"}</span>
+              <strong>
+                {canManageAsBuyer
+                  ? transaction.seller?.email ?? "Not available"
+                  : transaction.buyer?.email ?? "Not available"}
+              </strong>
             </div>
             <div>
               <span>Transaction ID</span>
@@ -248,17 +291,51 @@ export default function TransactionDetailsPage() {
           <div className="panel-card__header">
             <div>
               <h3>Available Navigation</h3>
-              <p>Jump back to the most useful seller workflow from here.</p>
+              <p>
+                {canManageAsBuyer
+                  ? "Jump back to your buyer workflow or take the next supported action."
+                  : "Jump back to the most useful seller workflow from here."}
+              </p>
             </div>
           </div>
 
           <div className="seller-transaction-links">
-            <Button to="/seller/sales" variant="secondary">
-              Back to My Sales
-            </Button>
-            <Button to="/seller/products" variant="ghost">
-              Manage Products
-            </Button>
+            {canManageAsBuyer ? (
+              <Button to="/my-purchases" variant="secondary">
+                Back to My Purchases
+              </Button>
+            ) : (
+              <Button to="/seller/sales" variant="secondary">
+                Back to My Sales
+              </Button>
+            )}
+            {canManageAsBuyer ? (
+              <Button to="/products" variant="ghost">
+                Browse Products
+              </Button>
+            ) : (
+              <Button to="/seller/products" variant="ghost">
+                Manage Products
+              </Button>
+            )}
+            {canManageAsBuyer && transaction.status === TransactionStatus.SHIPPED ? (
+              <Button
+                onClick={() => void handleConfirmReceipt(transaction.id)}
+                disabled={isConfirmingReceipt}
+              >
+                {isConfirmingReceipt ? "Confirming..." : "Confirm Receipt"}
+              </Button>
+            ) : null}
+            {canManageAsBuyer &&
+            buyerDisputableStatuses.includes(transaction.status) ? (
+              <Button
+                to="/disputes/new"
+                state={{ transactionId: transaction.id }}
+                variant="ghost"
+              >
+                Raise Dispute
+              </Button>
+            ) : null}
             {transaction.status === TransactionStatus.DISPUTED && disputeUrl ? (
               <Button to={disputeUrl} variant="ghost">
                 View Dispute
