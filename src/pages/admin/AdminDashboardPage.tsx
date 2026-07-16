@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 import Alert from "../../components/common/Alert";
 import Badge from "../../components/common/Badge";
@@ -120,6 +121,7 @@ function getInitialResolutionState() {
 }
 
 export default function AdminDashboardPage() {
+  const location = useLocation();
   const [period, setPeriod] = useState<AdminDashboardPeriod>("7d");
   const [dashboard, setDashboard] = useState<AdminDashboardData | null>(null);
   const [auditLogs, setAuditLogs] = useState<AdminAuditLog[]>([]);
@@ -159,6 +161,25 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     void loadDashboard();
   }, [loadDashboard]);
+
+  useEffect(() => {
+    if (isLoading || !dashboard || !location.hash) {
+      return;
+    }
+
+    const targetId = location.hash.replace("#", "");
+    const scrollToSection = window.setTimeout(() => {
+      const targetElement = document.getElementById(targetId);
+      if (targetElement) {
+        targetElement.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+    }, 50);
+
+    return () => window.clearTimeout(scrollToSection);
+  }, [dashboard, isLoading, location.hash]);
 
   const actionableDisputes = useMemo(
     () =>
@@ -259,7 +280,7 @@ export default function AdminDashboardPage() {
 
       {!isLoading && dashboard ? (
         <>
-          <section className="metrics-grid" id="users">
+          <section className="metrics-grid" id="users" style={{ scrollMarginTop: 120 }}>
             <Card className="metric-card">
               <span>Total Users</span>
               <strong>{dashboard.users.total}</strong>
@@ -295,7 +316,7 @@ export default function AdminDashboardPage() {
           </section>
 
           <section className="dashboard-grid">
-            <Card className="panel-card" id="security">
+            <Card className="panel-card" id="security" style={{ scrollMarginTop: 120 }}>
               <h3>Security Overview</h3>
               <div className="list-stack">
                 {[
@@ -351,7 +372,7 @@ export default function AdminDashboardPage() {
           </section>
 
           <section className="dashboard-grid">
-            <Card className="panel-card" id="disputes">
+            <Card className="panel-card">
               <h3>Dispute Snapshot</h3>
               <div className="list-stack">
                 {[
@@ -387,7 +408,11 @@ export default function AdminDashboardPage() {
             </Card>
           </section>
 
-          <section className="panel-card ui-card" id="audit-logs">
+          <section
+            className="panel-card ui-card"
+            id="audit-logs"
+            style={{ scrollMarginTop: 120 }}
+          >
             <div className="panel-card__header">
               <div>
                 <h3>Audit Logs</h3>
@@ -423,7 +448,11 @@ export default function AdminDashboardPage() {
             )}
           </section>
 
-          <section className="panel-card ui-card">
+          <section
+            className="panel-card ui-card"
+            id="disputes"
+            style={{ scrollMarginTop: 120 }}
+          >
             <div className="panel-card__header">
               <div>
                 <h3>Dispute Actions</h3>
