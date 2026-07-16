@@ -48,6 +48,29 @@ const disputeService = {
     return data.data;
   },
 
+  async downloadEvidence(
+    disputeId: string,
+    evidenceId: string,
+    originalName: string
+  ): Promise<void> {
+    const response = await api.get<Blob>(
+      `/disputes/${disputeId}/evidence/${evidenceId}`,
+      {
+        responseType: "blob",
+      }
+    );
+
+    const url = window.URL.createObjectURL(response.data);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = originalName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  },
+
   async uploadEvidence(disputeId: string, file: File): Promise<DisputeEvidence> {
     const formData = new FormData();
     formData.append("file", file);

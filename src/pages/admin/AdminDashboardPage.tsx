@@ -59,6 +59,18 @@ function formatReason(value: string) {
     .join(" ");
 }
 
+function formatFileSize(sizeBytes: number) {
+  if (sizeBytes < 1024) {
+    return `${sizeBytes} B`;
+  }
+
+  if (sizeBytes < 1024 * 1024) {
+    return `${(sizeBytes / 1024).toFixed(1)} KB`;
+  }
+
+  return `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 function getAuditBadgeVariant(eventType: string) {
   if (
     eventType === "UNAUTHORIZED_ACCESS_ATTEMPT" ||
@@ -115,6 +127,9 @@ export default function AdminDashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isReviewingId, setIsReviewingId] = useState<string | null>(null);
   const [isResolvingId, setIsResolvingId] = useState<string | null>(null);
+  const [isDownloadingEvidenceId, setIsDownloadingEvidenceId] = useState<string | null>(
+    null
+  );
   const [resolutionState, setResolutionState] = useState(getInitialResolutionState());
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -192,6 +207,25 @@ export default function AdminDashboardPage() {
       );
     } finally {
       setIsResolvingId(null);
+    }
+  };
+
+  const handleDownloadEvidence = async (
+    disputeId: string,
+    evidenceId: string,
+    originalName: string
+  ) => {
+    setIsDownloadingEvidenceId(evidenceId);
+    setErrorMessage("");
+
+    try {
+      await disputeService.downloadEvidence(disputeId, evidenceId, originalName);
+    } catch (error) {
+      setErrorMessage(
+        getApiErrorMessage(error, "We couldn't download this evidence file.")
+      );
+    } finally {
+      setIsDownloadingEvidenceId(null);
     }
   };
 
@@ -418,6 +452,38 @@ export default function AdminDashboardPage() {
                         {formatDateTime(dispute.createdAt)}
                       </span>
                       <span>{dispute.description}</span>
+                      {dispute.evidence?.length ? (
+                        <div className="list-stack" style={{ marginTop: 12 }}>
+                          {dispute.evidence.map((evidence) => (
+                            <div key={evidence.id} className="list-row">
+                              <div>
+                                <strong>{evidence.originalName}</strong>
+                                <span>
+                                  {evidence.mimeType} · {formatFileSize(evidence.sizeBytes)}
+                                </span>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() =>
+                                  void handleDownloadEvidence(
+                                    dispute.id,
+                                    evidence.id,
+                                    evidence.originalName
+                                  )
+                                }
+                                disabled={isDownloadingEvidenceId === evidence.id}
+                              >
+                                {isDownloadingEvidenceId === evidence.id
+                                  ? "Downloading..."
+                                  : "Download"}
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <span>No evidence uploaded yet.</span>
+                      )}
                     </div>
                     <div className="page-header__button-row">
                       <Badge variant={getDisputeBadgeVariant(dispute.status)}>
