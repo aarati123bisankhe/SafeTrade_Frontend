@@ -63,6 +63,7 @@ export type ProductFormValues = {
   category: Exclude<ProductCategory, "ALL">;
   condition: Exclude<ProductCondition, "ALL">;
   location: string;
+  imageUrl?: string | null;
 };
 
 export type ProductPayload = {
@@ -72,6 +73,7 @@ export type ProductPayload = {
   category: Exclude<ProductCategory, "ALL">;
   condition: Exclude<ProductCondition, "ALL">;
   location: string;
+  imageFile?: File | null;
 };
 
 export type ProductSortBy =

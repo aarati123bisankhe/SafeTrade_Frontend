@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 
 import Alert from "../common/Alert";
 import Button from "../common/Button";
@@ -19,7 +19,8 @@ type ProductFormProps = {
   onSubmit: (payload: ProductPayload) => Promise<void>;
 };
 
-type ProductFormErrors = Partial<Record<keyof ProductFormValues, string>>;
+type ProductFormField = keyof ProductFormValues | "imageFile";
+type ProductFormErrors = Partial<Record<ProductFormField, string>>;
 
 const categoryOptions: Array<Exclude<ProductCategory, "ALL">> = [
   "BOOKS",
@@ -45,7 +46,7 @@ function formatEnumLabel(value: string) {
     .join(" ");
 }
 
-function validateForm(values: ProductFormValues) {
+function validateForm(values: ProductFormValues, imageFile: File | null) {
   const errors: ProductFormErrors = {};
 
   if (values.name.trim().length < 2) {
@@ -65,6 +66,16 @@ function validateForm(values: ProductFormValues) {
     errors.location = "Location is required.";
   }
 
+  if (imageFile) {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(imageFile.type)) {
+      errors.imageFile = "Image must be a JPG, PNG, or WebP file.";
+    }
+
+    if (imageFile.size > 5 * 1024 * 1024) {
+      errors.imageFile = "Image must be smaller than 5 MB.";
+    }
+  }
+
   return errors;
 }
 
@@ -77,17 +88,41 @@ export default function ProductForm({
   onSubmit,
 }: ProductFormProps) {
   const [values, setValues] = useState<ProductFormValues>(initialValues);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(
+    initialValues.imageUrl ?? null
+  );
   const [fieldErrors, setFieldErrors] = useState<ProductFormErrors>({});
 
+  useEffect(() => {
+    setValues(initialValues);
+    setImageFile(null);
+    setImagePreviewUrl(initialValues.imageUrl ?? null);
+  }, [initialValues]);
+
+  useEffect(() => {
+    if (!imageFile) {
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(imageFile);
+    setImagePreviewUrl(objectUrl);
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [imageFile]);
+
   const hasChanges = useMemo(
-    () => JSON.stringify(values) !== JSON.stringify(initialValues),
-    [initialValues, values]
+    () =>
+      JSON.stringify(values) !== JSON.stringify(initialValues) || imageFile !== null,
+    [imageFile, initialValues, values]
   );
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const validationErrors = validateForm(values);
+    const validationErrors = validateForm(values, imageFile);
     setFieldErrors(validationErrors);
 
     if (Object.keys(validationErrors).length > 0) {
@@ -101,6 +136,7 @@ export default function ProductForm({
       category: values.category,
       condition: values.condition,
       location: values.location.trim(),
+      imageFile,
     });
   };
 
@@ -201,6 +237,32 @@ export default function ProductForm({
           <span className="ui-field__helper">{fieldErrors.description}</span>
         ) : null}
       </label>
+
+      <label className="ui-field">
+        <span className="ui-field__label">Product image</span>
+        <input
+          className="ui-input"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={(event) => {
+            const nextFile = event.target.files?.[0] ?? null;
+            setImageFile(nextFile);
+            setFieldErrors((current) => ({ ...current, imageFile: undefined }));
+          }}
+        />
+        <span className="ui-field__helper">
+          Upload a JPG, PNG, or WebP image up to 5 MB.
+        </span>
+        {fieldErrors.imageFile ? (
+          <span className="ui-field__helper">{fieldErrors.imageFile}</span>
+        ) : null}
+      </label>
+
+      {imagePreviewUrl ? (
+        <div className="seller-product-form__preview">
+          <img src={imagePreviewUrl} alt="Product preview" />
+        </div>
+      ) : null}
 
       <div className="seller-product-form__actions">
         <Button

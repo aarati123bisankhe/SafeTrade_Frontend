@@ -38,14 +38,47 @@ const productService = {
   },
 
   async createProduct(payload: ProductPayload) {
-    const { data } = await api.post<ApiResponse<Product>>("/products", payload);
+    const formData = new FormData();
+    formData.append("name", payload.name);
+    formData.append("description", payload.description);
+    formData.append("price", String(payload.price));
+    formData.append("category", payload.category);
+    formData.append("condition", payload.condition);
+    formData.append("location", payload.location);
+
+    if (payload.imageFile) {
+      formData.append("image", payload.imageFile);
+    }
+
+    const { data } = await api.post<ApiResponse<Product>>("/products", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
     return data.data;
   },
 
   async updateProduct(productId: string, payload: ProductPayload) {
+    const formData = new FormData();
+    formData.append("name", payload.name);
+    formData.append("description", payload.description);
+    formData.append("price", String(payload.price));
+    formData.append("category", payload.category);
+    formData.append("condition", payload.condition);
+    formData.append("location", payload.location);
+
+    if (payload.imageFile) {
+      formData.append("image", payload.imageFile);
+    }
+
     const { data } = await api.patch<ApiResponse<Product>>(
       `/products/${productId}`,
-      payload
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
     );
 
     return data.data;

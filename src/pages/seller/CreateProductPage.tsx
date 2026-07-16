@@ -15,6 +15,7 @@ const initialValues: ProductFormValues = {
   category: "BOOKS",
   condition: "NEW",
   location: "",
+  imageUrl: null,
 };
 
 export default function CreateProductPage() {

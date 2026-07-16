@@ -18,8 +18,8 @@ const navigationByRole: Record<
     { label: "Dashboard", to: "/seller/dashboard" },
     { label: "My Products", to: "/seller/products" },
     { label: "Add Product", to: "/seller/products/new" },
-    { label: "My Sales", to: "/seller/dashboard#sales" },
-    { label: "Disputes", to: "/seller/dashboard#disputes" },
+    { label: "My Sales", to: "/seller/sales" },
+    { label: "Disputes", to: "/seller/sales?status=DISPUTED" },
     { label: "Profile", to: "/profile" },
   ],
   ADMIN: [

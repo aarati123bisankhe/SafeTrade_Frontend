@@ -2813,6 +2813,8 @@ ul {
 }
 
 .marketplace-product-card {
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   border: 1px solid rgba(226, 232, 240, 0.95);
   border-radius: 24px;
@@ -2864,7 +2866,9 @@ ul {
 }
 
 .marketplace-product-card__content {
-  display: grid;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
   gap: 14px;
   padding: 18px;
 }
@@ -2895,6 +2899,7 @@ ul {
 .marketplace-product-card__content p {
   display: -webkit-box;
   min-height: 3.2em;
+  margin: 0;
   overflow: hidden;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -2902,10 +2907,20 @@ ul {
 
 .marketplace-product-card__meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 10px 18px;
+  min-height: 4.8em;
+  align-content: start;
+  margin-top: auto;
+  padding-top: 4px;
+  justify-content: flex-start;
   font-size: 0.95rem;
+}
+
+.marketplace-product-card__content .ui-button,
+.marketplace-product-card__content a.ui-button {
+  margin-top: 4px;
 }
 
 .marketplace-empty-state {
@@ -3171,6 +3186,20 @@ ul {
   resize: vertical;
 }
 
+.seller-product-form__preview {
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.95), rgba(241, 245, 249, 0.9));
+}
+
+.seller-product-form__preview img {
+  display: block;
+  width: 100%;
+  max-height: 320px;
+  object-fit: cover;
+}
+
 .seller-product-form__actions {
   display: flex;
   justify-content: flex-end;
@@ -3210,6 +3239,18 @@ ul {
   margin-top: 24px;
 }
 
+.seller-transaction-details {
+  margin-top: 18px;
+}
+
+.seller-transaction-action-row,
+.seller-transaction-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
+}
+
 @media (max-width: 1024px) {
   .seller-products-grid,
   .seller-product-form__grid {
@@ -3226,7 +3267,9 @@ ul {
 
   .seller-product-card__header,
   .seller-modal__actions,
-  .page-header__button-row {
+  .page-header__button-row,
+  .seller-transaction-action-row,
+  .seller-transaction-links {
     flex-direction: column;
     align-items: stretch;
   }

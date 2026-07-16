@@ -19,6 +19,38 @@ const transactionService = {
     return data.data;
   },
 
+  async getMySales(): Promise<TradeTransaction[]> {
+    const { data } = await api.get<ApiResponse<TradeTransaction[]>>(
+      "/transactions/my-sales"
+    );
+
+    return data.data;
+  },
+
+  async getTransactionById(transactionId: string): Promise<TradeTransaction> {
+    const { data } = await api.get<ApiResponse<TradeTransaction>>(
+      `/transactions/${transactionId}`
+    );
+
+    return data.data;
+  },
+
+  async acceptTransaction(transactionId: string): Promise<TradeTransaction> {
+    const { data } = await api.patch<ApiResponse<TradeTransaction>>(
+      `/transactions/${transactionId}/accept`
+    );
+
+    return data.data;
+  },
+
+  async shipTransaction(transactionId: string): Promise<TradeTransaction> {
+    const { data } = await api.patch<ApiResponse<TradeTransaction>>(
+      `/transactions/${transactionId}/ship`
+    );
+
+    return data.data;
+  },
+
   async confirmReceipt(transactionId: string): Promise<TradeTransaction> {
     const { data } = await api.patch<ApiResponse<TradeTransaction>>(
       `/transactions/${transactionId}/confirm-receipt`

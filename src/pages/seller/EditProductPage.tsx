@@ -20,6 +20,7 @@ function getInitialValues(product: Product): ProductFormValues {
     category: product.category,
     condition: product.condition,
     location: product.location,
+    imageUrl: product.imageUrl ?? null,
   };
 }
 

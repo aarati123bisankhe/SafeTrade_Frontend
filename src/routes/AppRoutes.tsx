@@ -20,6 +20,8 @@ import CreateProductPage from "../pages/seller/CreateProductPage";
 import EditProductPage from "../pages/seller/EditProductPage";
 import SellerDashboardPage from "../pages/seller/SellerDashboardPage";
 import SellerProductsPage from "../pages/seller/SellerProductsPage";
+import SellerSalesPage from "../pages/seller/SellerSalesPage";
+import TransactionDetailsPage from "../pages/transactions/TransactionDetailsPage";
 
 import DashboardLayout from "../components/layout/DashboardLayout";
 import ProtectedRoute from "./ProtectedRoute";
@@ -66,9 +68,23 @@ export default function AppRoutes() {
               path="/disputes/new"
               element={<NewDisputePage />}
             />
+          </Route>
+
+          <Route
+            element={<RoleProtectedRoute allowedRoles={["BUYER", "SELLER", "ADMIN"]} />}
+          >
             <Route
               path="/disputes/:disputeId"
               element={<DisputeDetailsPage />}
+            />
+          </Route>
+
+          <Route
+            element={<RoleProtectedRoute allowedRoles={["BUYER", "SELLER", "ADMIN"]} />}
+          >
+            <Route
+              path="/transactions/:transactionId"
+              element={<TransactionDetailsPage />}
             />
           </Route>
 
@@ -90,6 +106,10 @@ export default function AppRoutes() {
             <Route
               path="/seller/products/:productId/edit"
               element={<EditProductPage />}
+            />
+            <Route
+              path="/seller/sales"
+              element={<SellerSalesPage />}
             />
           </Route>
 

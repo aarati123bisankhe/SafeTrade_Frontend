@@ -5,27 +5,40 @@ import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
 import Card from "../../components/common/Card";
 import PageHeader from "../../components/common/PageHeader";
-import ProductStatusBadge from "../../components/products/ProductStatusBadge";
+import disputeService from "../../services/dispute.service";
 import productService from "../../services/product.service";
+import transactionService from "../../services/transaction.service";
+import { DisputeStatus, type Dispute } from "../../types/dispute.types";
 import type { Product } from "../../types/product.types";
+import {
+  TransactionStatus,
+  type TradeTransaction,
+} from "../../types/transaction.types";
 import { getApiErrorMessage } from "../../utils/apiError";
-
-function formatCurrency(value: number) {
-  return `Rs. ${value.toLocaleString()}`;
-}
+import TransactionStatusBadge from "../../components/transactions/TransactionStatusBadge";
+import { formatTransactionCurrency } from "../../components/transactions/transactionUtils";
 
 export default function SellerDashboardPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [sales, setSales] = useState<TradeTransaction[]>([]);
+  const [disputes, setDisputes] = useState<Dispute[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const loadProducts = useCallback(async () => {
+  const loadDashboard = useCallback(async () => {
     setIsLoading(true);
     setErrorMessage("");
 
     try {
-      const data = await productService.getSellerProducts();
-      setProducts(data);
+      const [productData, salesData, disputesData] = await Promise.all([
+        productService.getSellerProducts(),
+        transactionService.getMySales(),
+        disputeService.getMyDisputes(),
+      ]);
+
+      setProducts(productData);
+      setSales(salesData);
+      setDisputes(disputesData);
     } catch (error) {
       setErrorMessage(
         getApiErrorMessage(error, "We couldn't load your seller dashboard right now.")
@@ -36,39 +49,53 @@ export default function SellerDashboardPage() {
   }, []);
 
   useEffect(() => {
-    void loadProducts();
-  }, [loadProducts]);
+    void loadDashboard();
+  }, [loadDashboard]);
 
-  const summaryCards = useMemo(() => {
-    const activeListings = products.filter((product) => product.status === "AVAILABLE").length;
-    const reservedProducts = products.filter((product) => product.status === "RESERVED").length;
-    const soldProducts = products.filter((product) => product.status === "SOLD").length;
-    const fundsInEscrow = products
-      .filter((product) => product.status === "RESERVED")
-      .reduce((sum, product) => sum + product.price, 0);
-
-    return [
-      { label: "Active Listings", value: String(activeListings).padStart(2, "0") },
-      { label: "Reserved Products", value: String(reservedProducts).padStart(2, "0") },
-      { label: "Orders to Accept", value: String(reservedProducts).padStart(2, "0") },
-      { label: "Orders to Ship", value: String(reservedProducts).padStart(2, "0") },
-      { label: "Funds in Escrow", value: formatCurrency(fundsInEscrow) },
-      { label: "Completed Sales", value: String(soldProducts).padStart(2, "0") },
+  const summary = useMemo(() => {
+    const protectedStatuses: TradeTransaction["status"][] = [
+      TransactionStatus.FUNDS_HELD,
+      TransactionStatus.SELLER_ACCEPTED,
+      TransactionStatus.SHIPPED,
+      TransactionStatus.DISPUTED,
     ];
-  }, [products]);
+    const openDisputeStatuses: DisputeStatus[] = [
+      DisputeStatus.OPEN,
+      DisputeStatus.UNDER_REVIEW,
+    ];
+
+    return {
+      activeListings: products.filter((product) => product.status === "AVAILABLE").length,
+      ordersToAccept: sales.filter((sale) => sale.status === TransactionStatus.FUNDS_HELD).length,
+      ordersToShip: sales.filter((sale) => sale.status === TransactionStatus.SELLER_ACCEPTED)
+        .length,
+      fundsHeld: sales
+        .filter((sale) => protectedStatuses.includes(sale.status))
+        .reduce((sum, sale) => sum + sale.agreedPrice, 0),
+      completedSales: sales.filter((sale) => sale.status === TransactionStatus.FUNDS_RELEASED)
+        .length,
+      openDisputes: disputes.filter((dispute) => openDisputeStatuses.includes(dispute.status))
+        .length,
+    };
+  }, [disputes, products, sales]);
 
   const recentListings = products.slice(0, 3);
-  const reservedListings = products.filter((product) => product.status === "RESERVED").slice(0, 3);
-  const soldListings = products.filter((product) => product.status === "SOLD").slice(0, 3);
+  const acceptOrders = sales.filter((sale) => sale.status === TransactionStatus.FUNDS_HELD).slice(0, 3);
+  const shipOrders = sales
+    .filter((sale) => sale.status === TransactionStatus.SELLER_ACCEPTED)
+    .slice(0, 3);
+  const completedOrders = sales
+    .filter((sale) => sale.status === TransactionStatus.FUNDS_RELEASED)
+    .slice(0, 3);
 
   return (
     <div className="dashboard-page">
       <PageHeader
         title="Manage listings, orders, and protected payouts"
-        description="See what needs attention across reservations, shipments, escrow, and product management."
+        description="See what needs attention across reservations, shipments, escrow, and seller disputes."
         actions={
           <div className="page-header__button-row">
-            <Button to="/seller/products">Manage Products</Button>
+            <Button to="/seller/sales">View Sales</Button>
             <Button to="/seller/products/new" variant="secondary">
               Add New Product
             </Button>
@@ -83,13 +110,36 @@ export default function SellerDashboardPage() {
       ) : null}
 
       <section className="metrics-grid">
-        {summaryCards.map((card) => (
-          <Card key={card.label} className="metric-card">
-            <span>{card.label}</span>
-            <strong>{card.value}</strong>
-            <Badge variant="info">Seller workspace</Badge>
-          </Card>
-        ))}
+        <Card className="metric-card">
+          <span>Active Listings</span>
+          <strong>{String(summary.activeListings).padStart(2, "0")}</strong>
+          <Badge variant="info">Seller workspace</Badge>
+        </Card>
+        <Card className="metric-card">
+          <span>Orders to Accept</span>
+          <strong>{String(summary.ordersToAccept).padStart(2, "0")}</strong>
+          <Badge variant="warning">Funds held</Badge>
+        </Card>
+        <Card className="metric-card">
+          <span>Orders to Ship</span>
+          <strong>{String(summary.ordersToShip).padStart(2, "0")}</strong>
+          <Badge variant="info">Accepted</Badge>
+        </Card>
+        <Card className="metric-card">
+          <span>Funds Held in Escrow</span>
+          <strong>{formatTransactionCurrency(summary.fundsHeld)}</strong>
+          <Badge variant="success">Protected</Badge>
+        </Card>
+        <Card className="metric-card">
+          <span>Completed Sales</span>
+          <strong>{String(summary.completedSales).padStart(2, "0")}</strong>
+          <Badge variant="success">Released</Badge>
+        </Card>
+        <Card className="metric-card">
+          <span>Open Disputes</span>
+          <strong>{String(summary.openDisputes).padStart(2, "0")}</strong>
+          <Badge variant="danger">Needs review</Badge>
+        </Card>
       </section>
 
       <section className="dashboard-grid">
@@ -97,10 +147,10 @@ export default function SellerDashboardPage() {
           <div className="panel-card__header">
             <div>
               <h3>Manage Products</h3>
-              <p>Open your seller listings and keep them updated for buyers.</p>
+              <p>Keep your listings current so buyers can discover and purchase them.</p>
             </div>
             <Button to="/seller/products" variant="secondary" size="sm">
-              Open My Products
+              Manage Products
             </Button>
           </div>
 
@@ -128,7 +178,7 @@ export default function SellerDashboardPage() {
                     <strong>{product.name}</strong>
                     <span>{product.location}</span>
                   </div>
-                  <ProductStatusBadge status={product.status} />
+                  <Badge variant="info">{product.status}</Badge>
                 </div>
               ))}
             </div>
@@ -139,20 +189,21 @@ export default function SellerDashboardPage() {
           <div className="panel-card__header">
             <div>
               <h3>Orders to Accept</h3>
-              <p>Reserved products likely need your attention next.</p>
+              <p>Buyer funds are held safely until you accept these orders.</p>
             </div>
-            <Button to="/seller/products?status=RESERVED" variant="ghost" size="sm">
-              Review Reserved
+            <Button to="/seller/sales?status=FUNDS_HELD" variant="ghost" size="sm">
+              Review Orders
             </Button>
           </div>
+
           <div className="list-stack">
-            {(reservedListings.length > 0 ? reservedListings : recentListings).slice(0, 3).map((item) => (
-              <div key={item.id} className="list-row">
+            {(acceptOrders.length > 0 ? acceptOrders : sales.slice(0, 3)).map((sale) => (
+              <div key={sale.id} className="list-row">
                 <div>
-                  <strong>{item.name}</strong>
-                  <span>Buyer payment remains protected through SafeTrade escrow.</span>
+                  <strong>{sale.productName}</strong>
+                  <span>Buyer: {sale.buyer?.username ?? "Not available"}</span>
                 </div>
-                <ProductStatusBadge status={item.status} />
+                <TransactionStatusBadge status={sale.status} />
               </div>
             ))}
           </div>
@@ -162,20 +213,21 @@ export default function SellerDashboardPage() {
           <div className="panel-card__header">
             <div>
               <h3>Orders to Ship</h3>
-              <p>Keep reserved listings moving toward successful completion.</p>
+              <p>Accepted orders ready for the next seller shipping update.</p>
             </div>
-            <Button to="/seller/products?status=RESERVED" variant="ghost" size="sm">
+            <Button to="/seller/sales?status=SELLER_ACCEPTED" variant="ghost" size="sm">
               View Shipping Queue
             </Button>
           </div>
+
           <div className="list-stack">
-            {(reservedListings.length > 0 ? reservedListings : recentListings).slice(0, 3).map((item) => (
-              <div key={item.id} className="list-row">
+            {(shipOrders.length > 0 ? shipOrders : sales.slice(0, 3)).map((sale) => (
+              <div key={sale.id} className="list-row">
                 <div>
-                  <strong>{item.name}</strong>
-                  <span>Dispatch after acceptance to keep escrow activity moving.</span>
+                  <strong>{sale.productName}</strong>
+                  <span>{formatTransactionCurrency(sale.agreedPrice)}</span>
                 </div>
-                <Badge variant="warning">Ready to ship</Badge>
+                <TransactionStatusBadge status={sale.status} />
               </div>
             ))}
           </div>
@@ -184,21 +236,22 @@ export default function SellerDashboardPage() {
         <Card className="panel-card" id="sales">
           <div className="panel-card__header">
             <div>
-              <h3>View Sales</h3>
-              <p>Track recent completed or active listing outcomes.</p>
+              <h3>Completed Sales</h3>
+              <p>Escrow released orders that have fully completed.</p>
             </div>
-            <Button to="/seller/products" variant="ghost" size="sm">
+            <Button to="/seller/sales?status=FUNDS_RELEASED" variant="ghost" size="sm">
               View Sales
             </Button>
           </div>
+
           <div className="list-stack">
-            {(soldListings.length > 0 ? soldListings : recentListings).slice(0, 3).map((item) => (
-              <div key={item.id} className="list-row">
+            {(completedOrders.length > 0 ? completedOrders : sales.slice(0, 3)).map((sale) => (
+              <div key={sale.id} className="list-row">
                 <div>
-                  <strong>{item.name}</strong>
-                  <span>{formatCurrency(item.price)}</span>
+                  <strong>{sale.productName}</strong>
+                  <span>Buyer: {sale.buyer?.username ?? "Not available"}</span>
                 </div>
-                <ProductStatusBadge status={item.status} />
+                <TransactionStatusBadge status={sale.status} />
               </div>
             ))}
           </div>
