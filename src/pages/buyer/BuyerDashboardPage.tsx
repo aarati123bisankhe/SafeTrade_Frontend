@@ -158,8 +158,7 @@ const recommendedProducts: Product[] = [
     location: "Lalitpur",
     rating: "4.7",
     condition: "Good",
-    image:
-      "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=420&q=80",
+    image: "http://localhost:5005/uploads/products/study-desk-updated.png",
   },
   {
     title: "Wireless Headphones",
@@ -187,8 +186,7 @@ const disputes: Dispute[] = [
     reason: "Condition does not match listing",
     status: "Open",
     opened: "Opened yesterday",
-    image:
-      "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=240&q=80",
+    image: "http://localhost:5005/uploads/products/study-table-dashboard.png",
     badge: "danger",
   },
 ];
