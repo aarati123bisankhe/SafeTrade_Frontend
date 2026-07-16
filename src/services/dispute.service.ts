@@ -4,6 +4,7 @@ import type {
   CreateDisputeRequest,
   Dispute,
   DisputeEvidence,
+  ResolveDisputeRequest,
 } from "../types/dispute.types";
 
 const disputeService = {
@@ -19,6 +20,24 @@ const disputeService = {
 
   async createDispute(payload: CreateDisputeRequest): Promise<Dispute> {
     const { data } = await api.post<ApiResponse<Dispute>>("/disputes", payload);
+    return data.data;
+  },
+
+  async markUnderReview(disputeId: string): Promise<Dispute> {
+    const { data } = await api.patch<ApiResponse<Dispute>>(
+      `/disputes/${disputeId}/review`
+    );
+    return data.data;
+  },
+
+  async resolveDispute(
+    disputeId: string,
+    payload: ResolveDisputeRequest
+  ): Promise<Dispute> {
+    const { data } = await api.patch<ApiResponse<Dispute>>(
+      `/disputes/${disputeId}/resolve`,
+      payload
+    );
     return data.data;
   },
 

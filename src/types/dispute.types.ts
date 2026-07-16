@@ -65,3 +65,8 @@ export type CreateDisputeRequest = {
   reason: DisputeReason;
   description: string;
 };
+
+export type ResolveDisputeRequest = {
+  decision: "REFUND_BUYER" | "RELEASE_SELLER" | "REJECT_DISPUTE";
+  adminNote: string;
+};

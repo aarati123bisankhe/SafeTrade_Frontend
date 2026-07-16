@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import Alert from "../../components/common/Alert";
 import Badge from "../../components/common/Badge";
@@ -7,14 +7,28 @@ import Card from "../../components/common/Card";
 import Loader from "../../components/common/Loader";
 import PageHeader from "../../components/common/PageHeader";
 import adminService from "../../services/admin.service";
+import disputeService from "../../services/dispute.service";
 import type {
   AdminAuditLog,
   AdminDashboardData,
   AdminDashboardPeriod,
 } from "../../types/admin.types";
+import {
+  DisputeStatus,
+  type Dispute,
+  type ResolveDisputeRequest,
+} from "../../types/dispute.types";
 import { getApiErrorMessage } from "../../utils/apiError";
 
 const periodOptions: AdminDashboardPeriod[] = ["24h", "7d", "30d"];
+const resolutionOptions: Array<{
+  value: ResolveDisputeRequest["decision"];
+  label: string;
+}> = [
+  { value: "REFUND_BUYER", label: "Refund Buyer" },
+  { value: "RELEASE_SELLER", label: "Release Seller" },
+  { value: "REJECT_DISPUTE", label: "Reject Dispute" },
+];
 
 function formatPeriodLabel(value: AdminDashboardPeriod) {
   switch (value) {
@@ -35,6 +49,14 @@ function formatDateTime(value: string) {
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(value));
+}
+
+function formatReason(value: string) {
+  return value
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }
 
 function getAuditBadgeVariant(eventType: string) {
@@ -61,11 +83,39 @@ function getAuditBadgeVariant(eventType: string) {
   return "info";
 }
 
+function getDisputeBadgeVariant(status: Dispute["status"]) {
+  switch (status) {
+    case DisputeStatus.OPEN:
+      return "warning";
+    case DisputeStatus.UNDER_REVIEW:
+      return "info";
+    case DisputeStatus.RESOLVED_BUYER:
+    case DisputeStatus.RESOLVED_SELLER:
+      return "success";
+    case DisputeStatus.REJECTED:
+      return "danger";
+    default:
+      return "default";
+  }
+}
+
+function getInitialResolutionState() {
+  return {
+    disputeId: "",
+    decision: "REFUND_BUYER" as ResolveDisputeRequest["decision"],
+    adminNote: "",
+  };
+}
+
 export default function AdminDashboardPage() {
   const [period, setPeriod] = useState<AdminDashboardPeriod>("7d");
   const [dashboard, setDashboard] = useState<AdminDashboardData | null>(null);
   const [auditLogs, setAuditLogs] = useState<AdminAuditLog[]>([]);
+  const [disputes, setDisputes] = useState<Dispute[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isReviewingId, setIsReviewingId] = useState<string | null>(null);
+  const [isResolvingId, setIsResolvingId] = useState<string | null>(null);
+  const [resolutionState, setResolutionState] = useState(getInitialResolutionState());
   const [errorMessage, setErrorMessage] = useState("");
 
   const loadDashboard = useCallback(async () => {
@@ -73,13 +123,15 @@ export default function AdminDashboardPage() {
     setErrorMessage("");
 
     try {
-      const [dashboardData, auditLogData] = await Promise.all([
+      const [dashboardData, auditLogData, disputeData] = await Promise.all([
         adminService.getDashboard(period),
         adminService.getAuditLogs({ page: 1, limit: 10 }),
+        disputeService.getMyDisputes(),
       ]);
 
       setDashboard(dashboardData);
       setAuditLogs(auditLogData.items);
+      setDisputes(disputeData);
     } catch (error) {
       setErrorMessage(
         getApiErrorMessage(error, "We couldn't load the admin dashboard.")
@@ -92,6 +144,56 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     void loadDashboard();
   }, [loadDashboard]);
+
+  const actionableDisputes = useMemo(
+    () =>
+      disputes.filter(
+        (dispute) =>
+          dispute.status === DisputeStatus.OPEN ||
+          dispute.status === DisputeStatus.UNDER_REVIEW
+      ),
+    [disputes]
+  );
+
+  const handleMarkUnderReview = async (disputeId: string) => {
+    setIsReviewingId(disputeId);
+    setErrorMessage("");
+
+    try {
+      await disputeService.markUnderReview(disputeId);
+      await loadDashboard();
+    } catch (error) {
+      setErrorMessage(
+        getApiErrorMessage(error, "We couldn't move this dispute into review.")
+      );
+    } finally {
+      setIsReviewingId(null);
+    }
+  };
+
+  const handleResolveDispute = async () => {
+    if (resolutionState.adminNote.trim().length < 5 || !resolutionState.disputeId) {
+      return;
+    }
+
+    setIsResolvingId(resolutionState.disputeId);
+    setErrorMessage("");
+
+    try {
+      await disputeService.resolveDispute(resolutionState.disputeId, {
+        decision: resolutionState.decision,
+        adminNote: resolutionState.adminNote.trim(),
+      });
+      setResolutionState(getInitialResolutionState());
+      await loadDashboard();
+    } catch (error) {
+      setErrorMessage(
+        getApiErrorMessage(error, "We couldn't resolve this dispute right now.")
+      );
+    } finally {
+      setIsResolvingId(null);
+    }
+  };
 
   return (
     <div className="dashboard-page">
@@ -285,6 +387,129 @@ export default function AdminDashboardPage() {
                 ))}
               </div>
             )}
+          </section>
+
+          <section className="panel-card ui-card">
+            <div className="panel-card__header">
+              <div>
+                <h3>Dispute Actions</h3>
+                <p>Move open disputes into review and resolve them from the admin workspace.</p>
+              </div>
+              <Badge variant="warning">
+                {actionableDisputes.length} actionable dispute
+                {actionableDisputes.length === 1 ? "" : "s"}
+              </Badge>
+            </div>
+
+            {actionableDisputes.length === 0 ? (
+              <Card className="marketplace-empty-state purchases-empty-state">
+                <Badge variant="success">All caught up</Badge>
+                <h3>No open admin dispute actions right now.</h3>
+                <p>New buyer disputes will appear here when they need admin attention.</p>
+              </Card>
+            ) : (
+              <div className="list-stack">
+                {actionableDisputes.map((dispute) => (
+                  <div key={dispute.id} className="profile-list-row">
+                    <div>
+                      <strong>{dispute.transaction?.productName ?? "Protected transaction"}</strong>
+                      <span>
+                        {formatReason(dispute.reason)} · {dispute.raisedBy?.username ?? "Buyer"} ·{" "}
+                        {formatDateTime(dispute.createdAt)}
+                      </span>
+                      <span>{dispute.description}</span>
+                    </div>
+                    <div className="page-header__button-row">
+                      <Badge variant={getDisputeBadgeVariant(dispute.status)}>
+                        {dispute.status}
+                      </Badge>
+                      {dispute.status === DisputeStatus.OPEN ? (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => void handleMarkUnderReview(dispute.id)}
+                          disabled={isReviewingId === dispute.id}
+                        >
+                          {isReviewingId === dispute.id ? "Reviewing..." : "Mark Under Review"}
+                        </Button>
+                      ) : null}
+                      {dispute.status === DisputeStatus.UNDER_REVIEW ? (
+                        <Button
+                          size="sm"
+                          onClick={() =>
+                            setResolutionState({
+                              disputeId: dispute.id,
+                              decision: "REFUND_BUYER",
+                              adminNote: dispute.adminNote ?? "",
+                            })
+                          }
+                        >
+                          Resolve Dispute
+                        </Button>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {resolutionState.disputeId ? (
+              <div className="dispute-form" style={{ marginTop: 24 }}>
+                <label className="dispute-form__field">
+                  <span>Resolution</span>
+                  <select
+                    value={resolutionState.decision}
+                    onChange={(event) =>
+                      setResolutionState((current) => ({
+                        ...current,
+                        decision: event.target.value as ResolveDisputeRequest["decision"],
+                      }))
+                    }
+                  >
+                    {resolutionOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="dispute-form__field">
+                  <span>Admin Note</span>
+                  <textarea
+                    rows={5}
+                    value={resolutionState.adminNote}
+                    onChange={(event) =>
+                      setResolutionState((current) => ({
+                        ...current,
+                        adminNote: event.target.value,
+                      }))
+                    }
+                    placeholder="Explain the decision clearly for the buyer and seller."
+                  />
+                </label>
+
+                <div className="dispute-form__actions">
+                  <Button
+                    onClick={() => void handleResolveDispute()}
+                    disabled={
+                      isResolvingId === resolutionState.disputeId ||
+                      resolutionState.adminNote.trim().length < 5
+                    }
+                  >
+                    {isResolvingId === resolutionState.disputeId
+                      ? "Resolving..."
+                      : "Confirm Resolution"}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setResolutionState(getInitialResolutionState())}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : null}
           </section>
         </>
       ) : null}
