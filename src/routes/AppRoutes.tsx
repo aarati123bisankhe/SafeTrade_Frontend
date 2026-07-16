@@ -16,7 +16,10 @@ import ProductDetailsPage from "../pages/products/ProductDetailsPage";
 import ProductsPage from "../pages/products/ProductsPage";
 import LandingPage from "../pages/public/LandingPage";
 import OnboardingPage from "../pages/public/OnboardingPage";
+import CreateProductPage from "../pages/seller/CreateProductPage";
+import EditProductPage from "../pages/seller/EditProductPage";
 import SellerDashboardPage from "../pages/seller/SellerDashboardPage";
+import SellerProductsPage from "../pages/seller/SellerProductsPage";
 
 import DashboardLayout from "../components/layout/DashboardLayout";
 import ProtectedRoute from "./ProtectedRoute";
@@ -70,11 +73,23 @@ export default function AppRoutes() {
           </Route>
 
           <Route
-            element={<RoleProtectedRoute allowedRoles={["SELLER"]} />}
+            element={<RoleProtectedRoute allowedRoles={["SELLER", "ADMIN"]} />}
           >
             <Route
               path="/seller/dashboard"
               element={<SellerDashboardPage />}
+            />
+            <Route
+              path="/seller/products"
+              element={<SellerProductsPage />}
+            />
+            <Route
+              path="/seller/products/new"
+              element={<CreateProductPage />}
+            />
+            <Route
+              path="/seller/products/:productId/edit"
+              element={<EditProductPage />}
             />
           </Route>
 

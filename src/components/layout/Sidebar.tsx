@@ -16,8 +16,8 @@ const navigationByRole: Record<
   ],
   SELLER: [
     { label: "Dashboard", to: "/seller/dashboard" },
-    { label: "My Products", to: "/seller/dashboard#products" },
-    { label: "Add Product", to: "/seller/dashboard#add-product" },
+    { label: "My Products", to: "/seller/products" },
+    { label: "Add Product", to: "/seller/products/new" },
     { label: "My Sales", to: "/seller/dashboard#sales" },
     { label: "Disputes", to: "/seller/dashboard#disputes" },
     { label: "Profile", to: "/profile" },

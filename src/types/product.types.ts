@@ -56,6 +56,24 @@ export type Product = {
   seller?: ProductSeller;
 };
 
+export type ProductFormValues = {
+  name: string;
+  description: string;
+  price: string;
+  category: Exclude<ProductCategory, "ALL">;
+  condition: Exclude<ProductCondition, "ALL">;
+  location: string;
+};
+
+export type ProductPayload = {
+  name: string;
+  description: string;
+  price: number;
+  category: Exclude<ProductCategory, "ALL">;
+  condition: Exclude<ProductCondition, "ALL">;
+  location: string;
+};
+
 export type ProductSortBy =
   | "NEWEST"
   | "PRICE_LOW_HIGH"
