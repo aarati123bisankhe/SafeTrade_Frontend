@@ -214,8 +214,7 @@ const categories: Category[] = [
   },
   {
     name: "Handmade",
-    image:
-      "https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=420&q=80",
+    image: "http://localhost:5005/uploads/products/handmade-dashboard.png",
   },
 ];
 
