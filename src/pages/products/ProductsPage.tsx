@@ -20,6 +20,7 @@ import DashboardHeader from "../../components/layout/DashboardHeader";
 import DashboardFooter from "../../components/layout/DashboardFooter";
 import productService from "../../services/product.service";
 import {
+  type PaginatedProducts,
   ProductCategory,
   ProductCondition,
   type Product,
@@ -71,23 +72,19 @@ function formatConditionLabel(value: string) {
     .join(" ");
 }
 
-function getPriceRangeMatch(price: number, range: string) {
+function getPriceBounds(range: string) {
   switch (range) {
     case "UNDER_5000":
-      return price < 5000;
+      return { minPrice: undefined, maxPrice: 4999 };
     case "5000_15000":
-      return price >= 5000 && price <= 15000;
+      return { minPrice: 5000, maxPrice: 15000 };
     case "15000_50000":
-      return price > 15000 && price <= 50000;
+      return { minPrice: 15001, maxPrice: 50000 };
     case "50000_PLUS":
-      return price > 50000;
+      return { minPrice: 50001, maxPrice: undefined };
     default:
-      return true;
+      return { minPrice: undefined, maxPrice: undefined };
   }
-}
-
-function normalizeText(value?: string | null) {
-  return value?.toLowerCase() ?? "";
 }
 
 function getCategoryArt(category: string) {
@@ -231,21 +228,45 @@ function ProductSkeleton() {
 
 export default function ProductsPage() {
   const location = useLocation();
-  const [products, setProducts] = useState<Product[]>([]);
+  const [productResults, setProductResults] = useState<PaginatedProducts>({
+    items: [],
+    page: 1,
+    limit: PAGE_SIZE,
+    totalItems: 0,
+    totalPages: 1,
+  });
   const [filters, setFilters] = useState(initialFilters);
   const [searchInput, setSearchInput] = useState(initialFilters.searchTerm);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const loadProducts = useCallback(async () => {
     setIsLoading(true);
     setErrorMessage("");
 
+    const priceBounds = getPriceBounds(filters.priceRange);
+
     try {
-      const data = await productService.getAllProducts();
-      setProducts(data.filter((product) => product.status !== "REMOVED"));
+      const data = await productService.getAllProducts({
+        page: currentPage,
+        limit: PAGE_SIZE,
+        search: filters.searchTerm.trim() || undefined,
+        category:
+          filters.category === ProductCategory.ALL
+            ? undefined
+            : (filters.category as Exclude<ProductCategory, "ALL">),
+        condition:
+          filters.condition === ProductCondition.ALL
+            ? undefined
+            : (filters.condition as Exclude<ProductCondition, "ALL">),
+        location: filters.location === "ALL" ? undefined : filters.location,
+        minPrice: priceBounds.minPrice,
+        maxPrice: priceBounds.maxPrice,
+        sortBy: filters.sortBy as "NEWEST" | "PRICE_LOW_HIGH" | "PRICE_HIGH_LOW",
+      });
+      setProductResults(data);
     } catch (error) {
       setErrorMessage(
         getApiErrorMessage(error, "We couldn't load products right now.")
@@ -253,7 +274,7 @@ export default function ProductsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [currentPage, filters]);
 
   useEffect(() => {
     void loadProducts();
@@ -271,6 +292,7 @@ export default function ProductsPage() {
         ...current,
         category: categoryFromHash,
       }));
+      setCurrentPage(1);
     });
   }, [location.hash]);
 
@@ -298,23 +320,12 @@ export default function ProductsPage() {
     sessionStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(favoriteIds));
   }, [favoriteIds]);
 
-  useEffect(() => {
-    setVisibleCount(PAGE_SIZE);
-  }, [
-    filters.searchTerm,
-    filters.category,
-    filters.condition,
-    filters.priceRange,
-    filters.location,
-    filters.sortBy,
-  ]);
-
   const locationOptions = useMemo(
     () => [
       { label: "All", value: "ALL" },
       ...Array.from(
         new Set(
-          products
+          productResults.items
             .map((product) => product.location.trim())
             .filter(Boolean)
         )
@@ -325,65 +336,8 @@ export default function ProductsPage() {
           value: location,
         })),
     ],
-    [products]
+    [productResults.items]
   );
-
-  const filteredProducts = useMemo(() => {
-    const normalizedSearch = filters.searchTerm.trim().toLowerCase();
-
-    return products
-      .filter((product) => {
-        const matchesSearch =
-          !normalizedSearch ||
-          normalizeText(product.name).includes(normalizedSearch) ||
-          normalizeText(product.description).includes(normalizedSearch) ||
-          normalizeText(product.category).includes(normalizedSearch) ||
-          normalizeText(product.location).includes(normalizedSearch) ||
-          normalizeText(product.seller?.username).includes(normalizedSearch);
-
-        const matchesCategory =
-          filters.category === ProductCategory.ALL ||
-          product.category === filters.category;
-
-        const matchesCondition =
-          filters.condition === ProductCondition.ALL ||
-          product.condition === filters.condition;
-
-        const matchesPriceRange = getPriceRangeMatch(product.price, filters.priceRange);
-
-        const matchesLocation =
-          filters.location === "ALL" ||
-          normalizeText(product.location.trim()) ===
-            normalizeText(filters.location.trim());
-
-        return (
-          product.status !== "REMOVED" &&
-          matchesSearch &&
-          matchesCategory &&
-          matchesCondition &&
-          matchesPriceRange &&
-          matchesLocation
-        );
-      })
-      .sort((left, right) => {
-        switch (filters.sortBy) {
-          case "PRICE_LOW_HIGH":
-            return left.price - right.price;
-          case "PRICE_HIGH_LOW":
-            return right.price - left.price;
-          default:
-            return (
-              new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
-            );
-        }
-      });
-  }, [products, filters]);
-
-  const visibleProducts = useMemo(
-    () => filteredProducts.slice(0, visibleCount),
-    [filteredProducts, visibleCount]
-  );
-  const hasMoreProducts = visibleCount < filteredProducts.length;
 
   const handleFilterChange = (field: keyof ProductFiltersValue, value: string) => {
     startTransition(() => {
@@ -391,6 +345,7 @@ export default function ProductsPage() {
         ...current,
         [field]: value,
       }));
+      setCurrentPage(1);
     });
   };
 
@@ -402,6 +357,7 @@ export default function ProductsPage() {
         ...current,
         searchTerm: searchInput,
       }));
+      setCurrentPage(1);
     });
   };
 
@@ -417,8 +373,15 @@ export default function ProductsPage() {
     );
   };
 
+  const hasActiveFilters =
+    filters.searchTerm.trim().length > 0 ||
+    filters.category !== ProductCategory.ALL ||
+    filters.condition !== ProductCondition.ALL ||
+    filters.priceRange !== "ALL" ||
+    filters.location !== "ALL";
+
   const emptyStateContent =
-    products.length === 0
+    !hasActiveFilters
       ? {
           badge: "No products yet",
           title: "No products are available right now.",
@@ -516,7 +479,9 @@ export default function ProductsPage() {
                 <h2>Product grid</h2>
                 <p>Search trusted local listings protected by escrow.</p>
               </div>
-              <Badge variant="success">{filteredProducts.length} products found</Badge>
+              <Badge variant="success">
+                {productResults.totalItems} products found
+              </Badge>
             </div>
 
             {errorMessage ? (
@@ -544,7 +509,7 @@ export default function ProductsPage() {
               </div>
             ) : null}
 
-            {!isLoading && !errorMessage && filteredProducts.length === 0 ? (
+            {!isLoading && !errorMessage && productResults.items.length === 0 ? (
               <Card className="marketplace-empty-state">
                 <Badge variant="info">{emptyStateContent.badge}</Badge>
                 <h3>{emptyStateContent.title}</h3>
@@ -552,10 +517,10 @@ export default function ProductsPage() {
               </Card>
             ) : null}
 
-            {!isLoading && filteredProducts.length > 0 ? (
+            {!isLoading && productResults.items.length > 0 ? (
               <>
                 <div className="marketplace-product-grid">
-                  {visibleProducts.map((product) => (
+                  {productResults.items.map((product) => (
                     <ProductCard
                       key={product.id}
                       product={product}
@@ -572,15 +537,29 @@ export default function ProductsPage() {
                 </div>
 
                 <div className="marketplace-load-more">
-                  {hasMoreProducts ? (
-                    <button
-                      type="button"
-                      className="marketplace-load-more__button"
-                      onClick={() => setVisibleCount((current) => current + PAGE_SIZE)}
-                    >
-                      Load More
-                    </button>
-                  ) : null}
+                  <button
+                    type="button"
+                    className="marketplace-load-more__button"
+                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </button>
+                  <span className="marketplace-load-more__label">
+                    Page {productResults.page} of {productResults.totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    className="marketplace-load-more__button"
+                    onClick={() =>
+                      setCurrentPage((page) =>
+                        Math.min(productResults.totalPages, page + 1)
+                      )
+                    }
+                    disabled={currentPage >= productResults.totalPages}
+                  >
+                    Next
+                  </button>
                 </div>
               </>
             ) : null}

@@ -55,3 +55,28 @@ export type Product = {
   updatedAt: string;
   seller?: ProductSeller;
 };
+
+export type ProductSortBy =
+  | "NEWEST"
+  | "PRICE_LOW_HIGH"
+  | "PRICE_HIGH_LOW";
+
+export type ProductListQuery = {
+  page?: number;
+  limit?: number;
+  search?: string;
+  category?: Exclude<ProductCategory, "ALL">;
+  condition?: Exclude<ProductCondition, "ALL">;
+  location?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  sortBy?: ProductSortBy;
+};
+
+export type PaginatedProducts = {
+  items: Product[];
+  page: number;
+  limit: number;
+  totalItems: number;
+  totalPages: number;
+};

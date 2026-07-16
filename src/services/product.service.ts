@@ -1,6 +1,10 @@
 import api from "./api";
 
-import type { Product } from "../types/product.types";
+import type {
+  PaginatedProducts,
+  Product,
+  ProductListQuery,
+} from "../types/product.types";
 
 type ApiResponse<T> = {
   success: boolean;
@@ -9,8 +13,10 @@ type ApiResponse<T> = {
 };
 
 const productService = { 
-  async getAllProducts() {
-    const { data } = await api.get<ApiResponse<Product[]>>("/products");
+  async getAllProducts(query: ProductListQuery = {}) {
+    const { data } = await api.get<ApiResponse<PaginatedProducts>>("/products", {
+      params: query,
+    });
 
     return data.data;
   },
