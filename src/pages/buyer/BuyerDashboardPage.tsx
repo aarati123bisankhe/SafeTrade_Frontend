@@ -85,8 +85,7 @@ const transactions: Transaction[] = [
     item: "MacBook Air M2",
     seller: "techstore",
     price: "Rs. 145,000",
-    image:
-      "https://images.unsplash.com/photo-1517336714739-489689fd1ca8?auto=format&fit=crop&w=320&q=80",
+    image: "http://localhost:5005/uploads/products/macbook-air-m2-dashboard.png",
     status: "Payment Held",
     badge: "warning",
   },
@@ -103,8 +102,7 @@ const transactions: Transaction[] = [
     item: "Desk Lamp",
     seller: "lightliving",
     price: "Rs. 3,200",
-    image:
-      "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=320&q=80",
+    image: "http://localhost:5005/uploads/products/desk-lamp-dashboard.png",
     status: "Shipped",
     badge: "info",
   },
@@ -130,8 +128,7 @@ const transactions: Transaction[] = [
     item: 'Mountain Bike Helmet',
     seller: "ridegear",
     price: "Rs. 5,900",
-    image:
-      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=320&q=80",
+    image: "http://localhost:5005/uploads/products/mountain-bike-helmet-dashboard.png",
     status: "Shipped",
     badge: "info",
   },
@@ -144,8 +141,7 @@ const recommendedProducts: Product[] = [
     location: "Kathmandu",
     rating: "4.8",
     condition: "Like New",
-    image:
-      "https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?auto=format&fit=crop&w=420&q=80",
+    image: "http://localhost:5005/uploads/products/gaming-keyboard-dashboard.png",
   },
   {
     title: "Mirrorless Camera",
