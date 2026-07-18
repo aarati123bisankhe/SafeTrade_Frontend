@@ -182,7 +182,7 @@ function resolveProductImage(imageUrl: string) {
     return imageUrl;
   }
 
-  const apiOrigin = API_BASE_URL ? new URL(API_BASE_URL).origin : "http://localhost:5001";
+  const apiOrigin = API_BASE_URL ? new URL(API_BASE_URL).origin : "https://localhost:5005";
 
   return new URL(imageUrl, apiOrigin).toString();
 }

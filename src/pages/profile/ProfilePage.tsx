@@ -1,11 +1,14 @@
-import { useMemo } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 
 import Alert from "../../components/common/Alert";
 import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
 import Card from "../../components/common/Card";
+import Input from "../../components/common/Input";
 import Loader from "../../components/common/Loader";
 import useAuth from "../../hooks/useAuth";
+import authService from "../../services/auth.service";
+import { getApiErrorMessage } from "../../utils/apiError";
 
 function formatRoleLabel(role: string) {
   return role.charAt(0) + role.slice(1).toLowerCase();
@@ -50,6 +53,20 @@ function ProfileMetric({
 
 export default function ProfilePage() {
   const { user, isLoading, refreshCurrentUser } = useAuth();
+  const [setupState, setSetupState] = useState<{
+    qrCodeDataUrl: string;
+    manualKey: string;
+  } | null>(null);
+  const [setupCode, setSetupCode] = useState("");
+  const [disablePassword, setDisablePassword] = useState("");
+  const [disableCode, setDisableCode] = useState("");
+  const [disableRecoveryCode, setDisableRecoveryCode] = useState("");
+  const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
+  const [securityMessage, setSecurityMessage] = useState("");
+  const [securityError, setSecurityError] = useState("");
+  const [isStartingSetup, setIsStartingSetup] = useState(false);
+  const [isEnablingTotp, setIsEnablingTotp] = useState(false);
+  const [isDisablingTotp, setIsDisablingTotp] = useState(false);
 
   const securityOverview = useMemo(() => {
     if (!user) {
@@ -100,6 +117,80 @@ export default function ProfilePage() {
       </div>
     );
   }
+
+  const resetFeedback = () => {
+    setSecurityError("");
+    setSecurityMessage("");
+  };
+
+  const handleStartSetup = async () => {
+    resetFeedback();
+    setIsStartingSetup(true);
+
+    try {
+      const response = await authService.startTotpSetup();
+      setSetupState(response);
+      setRecoveryCodes([]);
+      setSecurityMessage(
+        "Scan the QR code with your authenticator app, then enter the 6-digit code below."
+      );
+    } catch (error) {
+      setSecurityError(
+        getApiErrorMessage(error, "We couldn't start two-factor setup.")
+      );
+    } finally {
+      setIsStartingSetup(false);
+    }
+  };
+
+  const handleEnableTotp = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    resetFeedback();
+    setIsEnablingTotp(true);
+
+    try {
+      const response = await authService.enableTotp({ code: setupCode });
+      setRecoveryCodes(response.recoveryCodes);
+      setSetupCode("");
+      setSetupState(null);
+      await refreshCurrentUser();
+      setSecurityMessage(
+        "Two-factor authentication is now enabled. Save your recovery codes somewhere secure."
+      );
+    } catch (error) {
+      setSecurityError(
+        getApiErrorMessage(error, "We couldn't enable two-factor authentication.")
+      );
+    } finally {
+      setIsEnablingTotp(false);
+    }
+  };
+
+  const handleDisableTotp = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    resetFeedback();
+    setIsDisablingTotp(true);
+
+    try {
+      await authService.disableTotp({
+        password: disablePassword,
+        code: disableCode.trim() || undefined,
+        recoveryCode: disableRecoveryCode.trim().toUpperCase() || undefined,
+      });
+      setDisablePassword("");
+      setDisableCode("");
+      setDisableRecoveryCode("");
+      setRecoveryCodes([]);
+      await refreshCurrentUser();
+      setSecurityMessage("Two-factor authentication has been disabled.");
+    } catch (error) {
+      setSecurityError(
+        getApiErrorMessage(error, "We couldn't disable two-factor authentication.")
+      );
+    } finally {
+      setIsDisablingTotp(false);
+    }
+  };
 
   return (
     <div className="dashboard-page">
@@ -182,6 +273,18 @@ export default function ProfilePage() {
             </div>
           </div>
 
+          {securityError ? (
+            <Alert variant="error" title="Security update failed">
+              {securityError}
+            </Alert>
+          ) : null}
+
+          {securityMessage ? (
+            <Alert variant="success" title="Security updated">
+              {securityMessage}
+            </Alert>
+          ) : null}
+
           <div className="profile-stack">
             <div className="profile-list-row">
               <div>
@@ -195,9 +298,33 @@ export default function ProfilePage() {
                 <strong>TOTP status</strong>
                 <span>{securityOverview.loginSecurity}</span>
               </div>
-              <Badge variant={user.totpEnabled ? "success" : "warning"}>
-                {securityOverview.totpStatus}
-              </Badge>
+              <div className="profile-coming-soon">
+                <Badge variant={user.totpEnabled ? "success" : "warning"}>
+                  {securityOverview.totpStatus}
+                </Badge>
+                {user.totpEnabled ? (
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setSetupState(null);
+                      setRecoveryCodes([]);
+                      resetFeedback();
+                    }}
+                  >
+                    Manage
+                  </Button>
+                ) : (
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      void handleStartSetup();
+                    }}
+                    disabled={isStartingSetup}
+                  >
+                    {isStartingSetup ? "Starting..." : "Enable TOTP"}
+                  </Button>
+                )}
+              </div>
             </div>
             <div className="profile-list-row">
               <div>
@@ -214,6 +341,118 @@ export default function ProfilePage() {
               <Badge variant="default">Limited data</Badge>
             </div>
           </div>
+
+          {!user.totpEnabled && setupState ? (
+            <form className="profile-stack" onSubmit={handleEnableTotp}>
+              <div className="profile-list-row">
+                <div>
+                  <strong>Authenticator setup</strong>
+                  <span>Scan the QR code or enter the manual key in your authenticator app.</span>
+                </div>
+                <Badge variant="info">Setup in progress</Badge>
+              </div>
+              <div className="profile-detail-grid">
+                <div>
+                  <span>Manual key</span>
+                  <strong>{setupState.manualKey}</strong>
+                </div>
+                <div>
+                  <span>Verification</span>
+                  <strong>Enter the 6-digit code below to finish</strong>
+                </div>
+              </div>
+              <img
+                src={setupState.qrCodeDataUrl}
+                alt="Authenticator QR code"
+                style={{ width: "180px", maxWidth: "100%", borderRadius: "1rem" }}
+              />
+              <Input
+                label="Authenticator code"
+                value={setupCode}
+                onChange={(event) => setSetupCode(event.target.value)}
+                placeholder="Enter 6-digit code"
+                autoComplete="one-time-code"
+                inputMode="numeric"
+                maxLength={6}
+                required
+              />
+              <div className="profile-coming-soon">
+                <Button type="submit" variant="success" disabled={isEnablingTotp}>
+                  {isEnablingTotp ? "Verifying..." : "Confirm and enable"}
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setSetupState(null);
+                    setSetupCode("");
+                    resetFeedback();
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          ) : null}
+
+          {user.totpEnabled ? (
+            <form className="profile-stack" onSubmit={handleDisableTotp}>
+              <div className="profile-list-row">
+                <div>
+                  <strong>Disable TOTP</strong>
+                  <span>Confirm your password and provide either an authenticator code or a recovery code.</span>
+                </div>
+                <Badge variant="warning">Sensitive action</Badge>
+              </div>
+              <Input
+                label="Current password"
+                type="password"
+                value={disablePassword}
+                onChange={(event) => setDisablePassword(event.target.value)}
+                autoComplete="current-password"
+                required
+              />
+              <Input
+                label="Authenticator code"
+                value={disableCode}
+                onChange={(event) => setDisableCode(event.target.value)}
+                placeholder="Enter 6-digit code"
+                autoComplete="one-time-code"
+                inputMode="numeric"
+                maxLength={6}
+              />
+              <Input
+                label="Recovery code"
+                value={disableRecoveryCode}
+                onChange={(event) => setDisableRecoveryCode(event.target.value)}
+                placeholder="ABCD-1234"
+              />
+              <div className="profile-coming-soon">
+                <Button type="submit" variant="secondary" disabled={isDisablingTotp}>
+                  {isDisablingTotp ? "Disabling..." : "Disable TOTP"}
+                </Button>
+              </div>
+            </form>
+          ) : null}
+
+          {recoveryCodes.length > 0 ? (
+            <div className="profile-stack">
+              <div className="profile-list-row">
+                <div>
+                  <strong>Recovery codes</strong>
+                  <span>Each code can be used once if you lose access to your authenticator app.</span>
+                </div>
+                <Badge variant="warning">Save now</Badge>
+              </div>
+              <div className="profile-detail-grid">
+                {recoveryCodes.map((recoveryCode) => (
+                  <div key={recoveryCode}>
+                    <span>Recovery code</span>
+                    <strong>{recoveryCode}</strong>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </Card>
       </section>
 

@@ -31,6 +31,7 @@ export interface AuthSuccessResponse {
 export interface TotpChallenge {
   requiresTotp: true;
   mfaToken: string;
+  user: User;
   message?: string;
 }
 
@@ -39,6 +40,30 @@ export type LoginResponse = AuthSuccessResponse | TotpChallenge;
 export interface TotpVerificationRequest {
   mfaToken: string;
   code: string;
+}
+
+export interface TotpRecoveryVerificationRequest {
+  mfaToken: string;
+  recoveryCode: string;
+}
+
+export interface TotpSetupResponse {
+  qrCodeDataUrl: string;
+  manualKey: string;
+}
+
+export interface TotpEnableRequest {
+  code: string;
+}
+
+export interface TotpEnableResponse {
+  recoveryCodes: string[];
+}
+
+export interface TotpDisableRequest {
+  password: string;
+  code?: string;
+  recoveryCode?: string;
 }
 
 export interface OAuthExchangeResponse {

@@ -46,7 +46,7 @@ const footerColumns = [
     title: "Security",
     links: [
       { label: "Secure Login", to: "/login" },
-      { label: "Two-Factor Authentication", to: "/auth/totp" },
+      { label: "Two-Factor Authentication", to: "/profile" },
       { label: "OAuth Login", to: "/login" },
       { label: "Privacy", to: "/onboarding#privacy" },
       { label: "Terms & Conditions", to: "/onboarding#terms" },

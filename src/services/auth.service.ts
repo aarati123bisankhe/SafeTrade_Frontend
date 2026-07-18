@@ -6,6 +6,11 @@ import type {
   LoginResponse,
   OAuthExchangeResponse,
   RegisterRequest,
+  TotpDisableRequest,
+  TotpEnableRequest,
+  TotpEnableResponse,
+  TotpRecoveryVerificationRequest,
+  TotpSetupResponse,
   TotpVerificationRequest,
   User,
 } from "../types/auth.types";
@@ -110,6 +115,48 @@ export const authService = {
     sessionStorage.removeItem(MFA_TOKEN_KEY);
 
     return normalizedResponse;
+  },
+
+  async verifyRecoveryCode(
+    payload: TotpRecoveryVerificationRequest
+  ): Promise<AuthSuccessResponse> {
+    const { data } = await api.post<ApiResponse<{ user: User; token: string }>>(
+      "/auth/totp/recovery",
+      payload
+    );
+
+    const normalizedResponse = normalizeAuthSuccess(data.data);
+
+    persistAuthenticatedSession(
+      normalizedResponse.accessToken,
+      normalizedResponse.user
+    );
+    sessionStorage.removeItem(MFA_TOKEN_KEY);
+
+    return normalizedResponse;
+  },
+
+  async startTotpSetup(): Promise<TotpSetupResponse> {
+    const { data } = await api.post<ApiResponse<TotpSetupResponse>>(
+      "/auth/totp/setup"
+    );
+
+    return data.data;
+  },
+
+  async enableTotp(
+    payload: TotpEnableRequest
+  ): Promise<TotpEnableResponse> {
+    const { data } = await api.post<ApiResponse<TotpEnableResponse>>(
+      "/auth/totp/enable",
+      payload
+    );
+
+    return data.data;
+  },
+
+  async disableTotp(payload: TotpDisableRequest): Promise<void> {
+    await api.post<ApiResponse<null>>("/auth/totp/disable", payload);
   },
 
   async exchangeGoogleCode(code: string): Promise<OAuthExchangeResponse> {

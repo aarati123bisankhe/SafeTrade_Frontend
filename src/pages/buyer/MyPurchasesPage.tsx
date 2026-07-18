@@ -151,7 +151,7 @@ function getPurchaseImage(product?: Product) {
       return product.imageUrl;
     }
 
-    const apiOrigin = API_BASE_URL ? new URL(API_BASE_URL).origin : "http://localhost:5005";
+    const apiOrigin = API_BASE_URL ? new URL(API_BASE_URL).origin : "https://localhost:5005";
     return new URL(product.imageUrl, apiOrigin).toString();
   }
 

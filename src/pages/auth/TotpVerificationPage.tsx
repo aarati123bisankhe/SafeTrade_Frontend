@@ -14,9 +14,11 @@ export default function TotpVerificationPage() {
   const { verifyTotp, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const [code, setCode] = useState("");
+  const [recoveryCode, setRecoveryCode] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [infoMessage, setInfoMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [useRecoveryCode, setUseRecoveryCode] = useState(false);
 
   const mfaToken = authService.getStoredMfaToken();
 
@@ -35,10 +37,22 @@ export default function TotpVerificationPage() {
     setIsSubmitting(true);
 
     try {
-      const response = await verifyTotp({ mfaToken, code });
+      const response = useRecoveryCode
+        ? await authService.verifyRecoveryCode({
+            mfaToken,
+            recoveryCode: recoveryCode.trim().toUpperCase(),
+          })
+        : await verifyTotp({ mfaToken, code });
       navigate(getDashboardRouteByRole(response.user.role), { replace: true });
     } catch (error) {
-      setErrorMessage(getApiErrorMessage(error, "We couldn't verify your code."));
+      setErrorMessage(
+        getApiErrorMessage(
+          error,
+          useRecoveryCode
+            ? "We couldn't verify your recovery code."
+            : "We couldn't verify your code."
+        )
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -68,32 +82,51 @@ export default function TotpVerificationPage() {
           </Alert>
         ) : null}
 
-        <Input
-          label="Authentication code"
-          value={code}
-          onChange={(event) => setCode(event.target.value)}
-          placeholder="Enter 6-digit code"
-          autoComplete="one-time-code"
-          inputMode="numeric"
-          maxLength={6}
-          required
-        />
+        {useRecoveryCode ? (
+          <Input
+            label="Recovery code"
+            value={recoveryCode}
+            onChange={(event) => setRecoveryCode(event.target.value)}
+            placeholder="ABCD-1234"
+            autoComplete="one-time-code"
+            required
+          />
+        ) : (
+          <Input
+            label="Authentication code"
+            value={code}
+            onChange={(event) => setCode(event.target.value)}
+            placeholder="Enter 6-digit code"
+            autoComplete="one-time-code"
+            inputMode="numeric"
+            maxLength={6}
+            required
+          />
+        )}
 
         <Button type="submit" fullWidth size="lg" disabled={isSubmitting}>
-          {isSubmitting ? "Verifying..." : "Verify"}
+          {isSubmitting
+            ? "Verifying..."
+            : useRecoveryCode
+              ? "Verify recovery code"
+              : "Verify"}
         </Button>
 
         <Button
           type="button"
           variant="ghost"
           fullWidth
-          onClick={() =>
+          onClick={() => {
+            setUseRecoveryCode((current) => !current);
+            setErrorMessage("");
             setInfoMessage(
-              "Recovery code verification can be connected next using the /auth/totp/recovery route."
-            )
-          }
+              useRecoveryCode
+                ? "Switched back to authenticator app verification."
+                : "Use one of your saved recovery codes if you can't access the authenticator app."
+            );
+          }}
         >
-          Use recovery code instead
+          {useRecoveryCode ? "Use authenticator code instead" : "Use recovery code instead"}
         </Button>
 
         <div className="auth-inline-links">

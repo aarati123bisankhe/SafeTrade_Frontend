@@ -105,7 +105,7 @@ const categories: Category[] = [
   },
   {
     name: "Handmade",
-    image: "http://localhost:5005/uploads/products/handmade-dashboard.png",
+    image: "https://localhost:5005/uploads/products/handmade-dashboard.png",
     hash: "#handmade",
   },
 ];
@@ -170,7 +170,7 @@ function resolveImageUrl(imageUrl: string) {
     return imageUrl;
   }
 
-  const apiOrigin = API_BASE_URL ? new URL(API_BASE_URL).origin : "http://localhost:5005";
+  const apiOrigin = API_BASE_URL ? new URL(API_BASE_URL).origin : "https://localhost:5005";
   return new URL(imageUrl, apiOrigin).toString();
 }
 
