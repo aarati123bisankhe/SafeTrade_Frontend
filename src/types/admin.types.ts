@@ -8,7 +8,7 @@ export type AdminDashboardData = {
     buyers: number;
     sellers: number;
     admins: number;
-    currentlyLocked: number;
+    currentlyLocked: number; // Number of accounts currently locked due to failed login attempts
   };
   products: {
     total: number;
