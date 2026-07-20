@@ -13,6 +13,8 @@ export default defineConfig({
   server: fs.existsSync(certPath) && fs.existsSync(keyPath)
     ? {
         host: "localhost",
+        port: 4174,
+        strictPort: true,
         https: {
           cert: fs.readFileSync(certPath),
           key: fs.readFileSync(keyPath),
@@ -20,5 +22,7 @@ export default defineConfig({
       }
     : {
         host: "localhost",
+        port: 4174,
+        strictPort: true,
       },
 });
