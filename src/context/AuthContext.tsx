@@ -53,6 +53,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return authService.register(data);
   };
 
+  const verifyEmail = async (token: string) => {
+    return authService.verifyEmail(token);
+  };
+
   const login = async (data: LoginRequest) => {
     const response = await authService.login(data);
 
@@ -119,6 +123,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     refreshCurrentUser,
     verifyTotp,
     exchangeGoogleCode,
+    verifyEmail,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

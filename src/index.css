@@ -775,6 +775,14 @@ ul {
   gap: 18px;
 }
 
+.auth-form__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
 .auth-checkbox {
   display: inline-flex;
   align-items: center;
@@ -799,6 +807,11 @@ ul {
 }
 
 .auth-inline-links a {
+  color: var(--color-primary-blue);
+  font-weight: 700;
+}
+
+.auth-text-link {
   color: var(--color-primary-blue);
   font-weight: 700;
 }

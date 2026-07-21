@@ -6,6 +6,7 @@ import type {
   LoginResponse,
   OAuthExchangeResponse,
   RegisterRequest,
+  RegisterResponse,
   TotpDisableRequest,
   TotpEnableRequest,
   TotpEnableResponse,
@@ -57,12 +58,20 @@ const normalizeAuthSuccess = (payload: {
 };
 
 export const authService = {
-  async register(payload: RegisterRequest): Promise<User> {
+  async register(payload: RegisterRequest): Promise<RegisterResponse> {
     const { data } = await api.post<
-      ApiResponse<{ user: User; token: string }>
+      ApiResponse<RegisterResponse>
     >("/auth/register", payload);
 
-    return mapUser(data.data.user);
+    return data.data;
+  },
+
+  async verifyEmail(token: string): Promise<{ email: string; message: string }> {
+    const { data } = await api.post<
+      ApiResponse<{ email: string; message: string }>
+    >("/auth/verify-email", { token });
+
+    return data.data;
   },
 
   async login(payload: LoginRequest): Promise<LoginResponse> {

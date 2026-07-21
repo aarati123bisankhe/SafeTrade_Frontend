@@ -1,6 +1,8 @@
 import { Route, Routes } from "react-router-dom";
 
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
+import EmailVerificationPage from "../pages/auth/EmailVerificationPage";
+import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage";
 import LoginPage from "../pages/auth/LoginPage";
 import OAuthCallbackPage from "../pages/auth/OAuthCallbackPage";
 import RegisterPage from "../pages/auth/RegisterPage";
@@ -36,7 +38,9 @@ export default function AppRoutes() {
       <Route path="/products/:productId" element={<ProductDetailsPage />} />
 
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/auth/verify-email" element={<EmailVerificationPage />} />
       <Route path="/auth/totp" element={<TotpVerificationPage />} />
       <Route
         path="/auth/oauth/callback"

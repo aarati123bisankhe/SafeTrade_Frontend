@@ -18,6 +18,13 @@ export interface RegisterRequest {
   password: string;
 }
 
+export interface RegisterResponse {
+  email: string;
+  verificationEmailSent: boolean;
+  expiresInMinutes: number;
+  previewUrl?: string;
+}
+
 export interface LoginRequest {
   email: string;
   password: string;
@@ -92,11 +99,12 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (payload: LoginRequest) => Promise<LoginResponse>;
-  register: (payload: RegisterRequest) => Promise<User>;
+  register: (payload: RegisterRequest) => Promise<RegisterResponse>;
   logout: () => void;
   refreshCurrentUser: () => Promise<User | null>;
   verifyTotp: (
     payload: TotpVerificationRequest
   ) => Promise<AuthSuccessResponse>;
   exchangeGoogleCode: (code: string) => Promise<OAuthExchangeResponse>;
+  verifyEmail: (token: string) => Promise<{ email: string; message: string }>;
 }

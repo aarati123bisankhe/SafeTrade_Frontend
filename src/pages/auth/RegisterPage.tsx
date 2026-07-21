@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 
 import AuthLayout from "../../components/auth/AuthLayout";
 import PasswordInput from "../../components/auth/PasswordInput";
@@ -13,13 +13,13 @@ import { getDashboardRouteByRole } from "../../utils/authRedirect";
 
 export default function RegisterPage() {
   const { register, isAuthenticated, user } = useAuth();
-  const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (isAuthenticated && user) {
@@ -30,6 +30,7 @@ export default function RegisterPage() {
     event.preventDefault();
     setErrorMessage("");
     setSuccessMessage("");
+    setPreviewUrl(null);
 
     if (password !== confirmPassword) {
       setErrorMessage("Passwords do not match.");
@@ -39,20 +40,20 @@ export default function RegisterPage() {
     setIsSubmitting(true);
 
     try {
-      await register({
+      const response = await register({
         username,
         email,
         password,
       });
 
-      setSuccessMessage("Account created successfully. Redirecting to sign in...");
-
-      window.setTimeout(() => {
-        navigate("/login", {
-          replace: true,
-          state: { email },
-        });
-      }, 1200);
+      setSuccessMessage(
+        `We sent a verification link to ${response.email}. Please check your email and verify your account before signing in.`
+      );
+      setPreviewUrl(response.previewUrl ?? null);
+      setUsername("");
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
     } catch (error) {
       setErrorMessage(
         getApiErrorMessage(error, "We couldn't create your account.")
@@ -121,6 +122,16 @@ export default function RegisterPage() {
         <Button type="submit" fullWidth size="lg" disabled={isSubmitting}>
           {isSubmitting ? "Creating account..." : "Create account"}
         </Button>
+
+        {previewUrl ? (
+          <Button
+            to={previewUrl.replace(window.location.origin, "")}
+            variant="secondary"
+            fullWidth
+          >
+            Open local verification link
+          </Button>
+        ) : null}
 
         <SocialLoginButton />
 

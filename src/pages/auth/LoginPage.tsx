@@ -87,14 +87,20 @@ export default function LoginPage() {
           autoComplete="current-password"
         />
 
-        <label className="auth-checkbox">
-          <input
-            type="checkbox"
-            checked={rememberMe}
-            onChange={(event) => setRememberMe(event.target.checked)}
-          />
-          <span>Remember me on this device</span>
-        </label>
+        <div className="auth-form__row">
+          <label className="auth-checkbox">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(event) => setRememberMe(event.target.checked)}
+            />
+            <span>Remember me on this device</span>
+          </label>
+
+          <Link to="/forgot-password" className="auth-text-link">
+            Forgot password?
+          </Link>
+        </div>
 
         <Button type="submit" fullWidth size="lg" disabled={isSubmitting}>
           {isSubmitting ? "Signing in..." : "Sign in"}
