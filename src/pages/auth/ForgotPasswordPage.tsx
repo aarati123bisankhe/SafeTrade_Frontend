@@ -17,6 +17,8 @@ export default function ForgotPasswordPage() {
     <AuthLayout
       title="Forgot your password?"
       description="Enter the email linked to your SafeTrade account and we'll prepare a secure reset flow."
+      cardClassName="auth-layout__card--compact"
+      headerClassName="auth-layout__header--compact"
       footer={
         <p className="auth-meta">
           Reset requests will keep the same security-first experience as sign

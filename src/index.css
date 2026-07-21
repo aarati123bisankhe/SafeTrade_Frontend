@@ -755,10 +755,31 @@ ul {
   padding: 34px;
 }
 
+.auth-layout__card--compact {
+  width: min(100%, 460px);
+}
+
 .auth-layout__header {
   display: grid;
   gap: 12px;
   margin-bottom: 28px;
+}
+
+.auth-layout__header--compact h2 {
+  font-size: clamp(1.2rem, 1.7vw, 1.65rem);
+}
+
+.auth-layout__header--compact p,
+.auth-layout__card--compact .auth-meta,
+.auth-layout__card--compact .ui-field__label,
+.auth-layout__card--compact .ui-field__helper,
+.auth-layout__card--compact .auth-inline-links,
+.auth-layout__card--compact .ui-alert {
+  font-size: 0.86rem;
+}
+
+.auth-layout__card--compact .ui-button {
+  font-size: 0.92rem;
 }
 
 .auth-layout__header p,
@@ -814,6 +835,10 @@ ul {
 .auth-text-link {
   color: var(--color-primary-blue);
   font-weight: 700;
+}
+
+.auth-text-link--small {
+  font-size: 0.82rem;
 }
 
 .password-field {

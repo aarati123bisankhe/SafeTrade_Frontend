@@ -97,7 +97,10 @@ export default function LoginPage() {
             <span>Remember me on this device</span>
           </label>
 
-          <Link to="/forgot-password" className="auth-text-link">
+          <Link
+            to="/forgot-password"
+            className="auth-text-link auth-text-link--small"
+          >
             Forgot password?
           </Link>
         </div>

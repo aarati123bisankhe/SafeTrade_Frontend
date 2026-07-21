@@ -6,6 +6,8 @@ type AuthLayoutProps = {
   description: string;
   children: ReactNode;
   footer?: ReactNode;
+  cardClassName?: string;
+  headerClassName?: string;
 };
 
 export default function AuthLayout({
@@ -13,6 +15,8 @@ export default function AuthLayout({
   description,
   children,
   footer,
+  cardClassName = "",
+  headerClassName = "",
 }: AuthLayoutProps) {
   return (
     <div className="auth-shell">
@@ -53,8 +57,16 @@ export default function AuthLayout({
         </section>
 
         <section className="auth-layout__content">
-          <div className="auth-layout__card ui-card">
-            <div className="auth-layout__header">
+          <div
+            className={["auth-layout__card", "ui-card", cardClassName]
+              .filter(Boolean)
+              .join(" ")}
+          >
+            <div
+              className={["auth-layout__header", headerClassName]
+                .filter(Boolean)
+                .join(" ")}
+            >
               <h2>{title}</h2>
               <p>{description}</p>
             </div>
