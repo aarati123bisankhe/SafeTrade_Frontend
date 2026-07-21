@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 import AuthLayout from "../../components/auth/AuthLayout";
 import Alert from "../../components/common/Alert";
@@ -8,17 +8,21 @@ import useAuth from "../../hooks/useAuth";
 import { getApiErrorMessage } from "../../utils/apiError";
 import { getDashboardRouteByRole } from "../../utils/authRedirect";
 
+const redirectToDashboard = (role: "BUYER" | "SELLER" | "ADMIN") => {
+  window.location.replace(getDashboardRouteByRole(role));
+};
+
 export default function OAuthCallbackPage() {
   const { exchangeGoogleCode, isAuthenticated, user } = useAuth();
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const hasProcessed = useRef(false);
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState("Connecting your Google account...");
   const code = searchParams.get("code");
 
   if (isAuthenticated && user) {
-    return <Navigate to={getDashboardRouteByRole(user.role)} replace />;
+    redirectToDashboard(user.role);
+    return null;
   }
 
   useEffect(() => {
@@ -42,9 +46,7 @@ export default function OAuthCallbackPage() {
         setMessage("Authentication successful. Redirecting to your dashboard...");
 
         window.setTimeout(() => {
-          navigate(getDashboardRouteByRole(response.user.role), {
-            replace: true,
-          });
+          redirectToDashboard(response.user.role);
         }, 1000);
       } catch (error) {
         setStatus("error");
@@ -53,7 +55,7 @@ export default function OAuthCallbackPage() {
     };
 
     void handleExchange();
-  }, [code, exchangeGoogleCode, navigate]);
+  }, [code, exchangeGoogleCode]);
 
   return (
     <AuthLayout

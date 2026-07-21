@@ -8,8 +8,10 @@ import {
 import authService from "../services/auth.service"; 
 import type {
   AuthContextType,
+  ForgotPasswordRequest,
   LoginRequest,
   RegisterRequest,
+  ResetPasswordRequest,
   TotpVerificationRequest,
   User,
 } from "../types/auth.types";
@@ -23,14 +25,17 @@ type AuthProviderProps = {
 };
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(() => authService.getStoredUser());
+  const [isLoading, setIsLoading] = useState(() =>
+    Boolean(authService.getAccessToken()) && !authService.getStoredUser()
+  );
 
   useEffect(() => {
     const restoreSession = async () => {
       const token = authService.getAccessToken();
 
       if (!token) {
+        setUser(null);
         setIsLoading(false);
         return;
       }
@@ -55,6 +60,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const verifyEmail = async (token: string) => {
     return authService.verifyEmail(token);
+  };
+
+  const requestPasswordReset = async (data: ForgotPasswordRequest) => {
+    return authService.requestPasswordReset(data);
+  };
+
+  const resetPassword = async (data: ResetPasswordRequest) => {
+    return authService.resetPassword(data);
   };
 
   const login = async (data: LoginRequest) => {
@@ -113,12 +126,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setUser(null);
   };
 
+  const effectiveUser = user ?? authService.getStoredUser();
+
   const value: AuthContextType = {
-    user,
-    isAuthenticated: Boolean(user),
+    user: effectiveUser,
+    isAuthenticated: Boolean(effectiveUser),
     isLoading,
     register,
     login,
+    requestPasswordReset,
+    resetPassword,
     logout,
     refreshCurrentUser,
     verifyTotp,

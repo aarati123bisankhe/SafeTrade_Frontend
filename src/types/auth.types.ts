@@ -30,6 +30,26 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ForgotPasswordResponse {
+  emailDeliveryRequested: true;
+  expiresInMinutes: number;
+  previewUrl?: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  password: string;
+}
+
+export interface ResetPasswordResponse {
+  email: string;
+  message: string;
+}
+
 export interface AuthSuccessResponse {
   accessToken: string;
   user: User;
@@ -100,6 +120,12 @@ export interface AuthContextType {
   isLoading: boolean;
   login: (payload: LoginRequest) => Promise<LoginResponse>;
   register: (payload: RegisterRequest) => Promise<RegisterResponse>;
+  requestPasswordReset: (
+    payload: ForgotPasswordRequest
+  ) => Promise<ForgotPasswordResponse>;
+  resetPassword: (
+    payload: ResetPasswordRequest
+  ) => Promise<ResetPasswordResponse>;
   logout: () => void;
   refreshCurrentUser: () => Promise<User | null>;
   verifyTotp: (

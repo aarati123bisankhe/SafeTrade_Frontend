@@ -5,12 +5,41 @@ import AuthLayout from "../../components/auth/AuthLayout";
 import Alert from "../../components/common/Alert";
 import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
+import useAuth from "../../hooks/useAuth";
+import { getApiErrorMessage } from "../../utils/apiError";
 
 export default function ForgotPasswordPage() {
+  const { requestPasswordReset } = useAuth();
   const [email, setEmail] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setErrorMessage("");
+    setSuccessMessage("");
+    setPreviewUrl(null);
+    setIsSubmitting(true);
+
+    try {
+      const response = await requestPasswordReset({ email });
+
+      setSuccessMessage(
+        "If an account exists for that email, we sent a password reset link."
+      );
+      setPreviewUrl(response.previewUrl ?? null);
+    } catch (error) {
+      setErrorMessage(
+        getApiErrorMessage(
+          error,
+          "We couldn't send the reset link right now. Please try again."
+        )
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -27,10 +56,17 @@ export default function ForgotPasswordPage() {
       }
     >
       <form className="auth-form" onSubmit={handleSubmit}>
-        <Alert variant="info" title="Design preview">
-          The forgot-password screen is ready and matches the current auth UI.
-          The reset email action can be connected next.
-        </Alert>
+        {errorMessage ? (
+          <Alert variant="error" title="Reset request failed">
+            {errorMessage}
+          </Alert>
+        ) : null}
+
+        {successMessage ? (
+          <Alert variant="success" title="Check your email">
+            {successMessage}
+          </Alert>
+        ) : null}
 
         <Input
           label="Email"
@@ -43,9 +79,19 @@ export default function ForgotPasswordPage() {
           required
         />
 
-        <Button type="submit" fullWidth size="lg" disabled>
-          Send reset link
+        <Button type="submit" fullWidth size="lg" disabled={isSubmitting}>
+          {isSubmitting ? "Sending reset link..." : "Send reset link"}
         </Button>
+
+        {previewUrl ? (
+          <Button
+            to={previewUrl.replace(window.location.origin, "")}
+            variant="secondary"
+            fullWidth
+          >
+            Open local reset link
+          </Button>
+        ) : null}
 
         <div className="auth-inline-links">
           <span>Remembered your password?</span>

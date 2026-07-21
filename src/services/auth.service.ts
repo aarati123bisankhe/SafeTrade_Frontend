@@ -2,11 +2,15 @@ import api from "./api";
 import type {
   ApiResponse,
   AuthSuccessResponse,
+  ForgotPasswordRequest,
+  ForgotPasswordResponse,
   LoginRequest,
   LoginResponse,
   OAuthExchangeResponse,
   RegisterRequest,
   RegisterResponse,
+  ResetPasswordRequest,
+  ResetPasswordResponse,
   TotpDisableRequest,
   TotpEnableRequest,
   TotpEnableResponse,
@@ -70,6 +74,28 @@ export const authService = {
     const { data } = await api.post<
       ApiResponse<{ email: string; message: string }>
     >("/auth/verify-email", { token });
+
+    return data.data;
+  },
+
+  async requestPasswordReset(
+    payload: ForgotPasswordRequest
+  ): Promise<ForgotPasswordResponse> {
+    const { data } = await api.post<ApiResponse<ForgotPasswordResponse>>(
+      "/auth/forgot-password",
+      payload
+    );
+
+    return data.data;
+  },
+
+  async resetPassword(
+    payload: ResetPasswordRequest
+  ): Promise<ResetPasswordResponse> {
+    const { data } = await api.post<ApiResponse<ResetPasswordResponse>>(
+      "/auth/reset-password",
+      payload
+    );
 
     return data.data;
   },

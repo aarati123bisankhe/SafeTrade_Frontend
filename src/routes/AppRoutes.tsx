@@ -6,6 +6,7 @@ import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage";
 import LoginPage from "../pages/auth/LoginPage";
 import OAuthCallbackPage from "../pages/auth/OAuthCallbackPage";
 import RegisterPage from "../pages/auth/RegisterPage";
+import ResetPasswordPage from "../pages/auth/ResetPasswordPage";
 import TotpVerificationPage from "../pages/auth/TotpVerificationPage";
 import BuyerDashboardPage from "../pages/buyer/BuyerDashboardPage";
 import DisputeDetailsPage from "../pages/buyer/DisputeDetailsPage";
@@ -40,6 +41,7 @@ export default function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
       <Route path="/auth/verify-email" element={<EmailVerificationPage />} />
       <Route path="/auth/totp" element={<TotpVerificationPage />} />
       <Route

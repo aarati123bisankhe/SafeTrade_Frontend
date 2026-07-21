@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from "react";
-import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { useMemo, useState, type FormEvent } from "react";
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 import AuthLayout from "../../components/auth/AuthLayout";
 import PasswordInput from "../../components/auth/PasswordInput";
@@ -14,14 +14,28 @@ import { getDashboardRouteByRole } from "../../utils/authRedirect";
 export default function LoginPage() {
   const { login, isAuthenticated, user } = useAuth();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const locationState = (location.state as
+    | { email?: string; message?: string }
+    | null);
   const [email, setEmail] = useState(
-    (location.state as { email?: string } | null)?.email ?? ""
+    locationState?.email ?? ""
   );
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage] = useState(locationState?.message ?? "");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const oauthErrorMessage = useMemo(() => {
+    const error = searchParams.get("error");
+
+    if (!error) {
+      return "";
+    }
+
+    return decodeURIComponent(error);
+  }, [searchParams]);
 
   if (isAuthenticated && user) {
     return <Navigate to={getDashboardRouteByRole(user.role)} replace />;
@@ -62,9 +76,21 @@ export default function LoginPage() {
       }
     >
       <form className="auth-form" onSubmit={handleSubmit}>
+        {successMessage ? (
+          <Alert variant="success" title="Ready to sign in">
+            {successMessage}
+          </Alert>
+        ) : null}
+
         {errorMessage ? (
           <Alert variant="error" title="Sign-in failed">
             {errorMessage}
+          </Alert>
+        ) : null}
+
+        {!errorMessage && oauthErrorMessage ? (
+          <Alert variant="error" title="Google sign-in failed">
+            {oauthErrorMessage}
           </Alert>
         ) : null}
 
