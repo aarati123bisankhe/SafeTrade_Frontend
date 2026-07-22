@@ -28,11 +28,11 @@ function getAction(notification: SecurityNotification) {
     case "OTHER_SESSIONS_REVOKED":
       return { label: "Review sessions", to: "/profile/sessions" };
     case "PASSWORD_CHANGED":
-      return { label: "Review security activity", to: "/profile/security-notifications" };
+      return { label: "Review security activity", to: "/profile/security-activity" };
     case "TOTP_DISABLED":
       return { label: "Enable two-factor authentication", to: "/profile" };
     case "ACCOUNT_LOCKED":
-      return { label: "Review security activity", to: "/profile/security-notifications" };
+      return { label: "Review security activity", to: "/profile/security-activity" };
     default:
       return null;
   }

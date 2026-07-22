@@ -444,10 +444,15 @@ export default function ProfilePage() {
             ) : null}
             <div className="profile-list-row">
               <div>
-                <strong>Login security</strong>
-                <span>More detailed login history will appear here when backend support is available.</span>
+                <strong>Security Activity</strong>
+                <span>Review a chronological history of important sign-in, password, session, and security-protection events.</span>
               </div>
-              <Badge variant="default">Limited data</Badge>
+              <div className="profile-coming-soon">
+                <Badge variant="info">Available</Badge>
+                <Button to="/profile/security-activity" variant="secondary">
+                  Manage
+                </Button>
+              </div>
             </div>
             <div className="profile-list-row">
               <div>
@@ -666,28 +671,34 @@ export default function ProfilePage() {
         <Card className="panel-card profile-panel">
           <div className="panel-card__header">
             <div>
-              <h3>Account Activity</h3>
-              <p>Safe account information available from the authenticated user context.</p>
+              <h3>Security Activity</h3>
+              <p>Open your full account-security timeline without exposing internal audit details.</p>
             </div>
           </div>
 
           <div className="profile-detail-grid">
             <div>
-              <span>Account status</span>
-              <strong>{securityOverview.accountStatus}</strong>
+              <span>Coverage</span>
+              <strong>Login, password, TOTP, session, and re-authentication events</strong>
             </div>
             <div>
-              <span>Role badge</span>
-              <strong>{securityOverview.roleLabel}</strong>
+              <span>Privacy</span>
+              <strong>Masked IPs and safe device labels only</strong>
             </div>
             <div>
-              <span>Last login</span>
-              <strong>Not available in the current backend response</strong>
+              <span>Visibility</span>
+              <strong>Your affected-account events only</strong>
             </div>
             <div>
-              <span>Recent security info</span>
-              <strong>{user.totpEnabled ? "TOTP active" : "TOTP not enabled"}</strong>
+              <span>Purpose</span>
+              <strong>Chronological security history for your account</strong>
             </div>
+          </div>
+
+          <div className="profile-coming-soon">
+            <Button to="/profile/security-activity" variant="secondary">
+              Review security activity
+            </Button>
           </div>
         </Card>
       </section>
