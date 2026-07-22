@@ -5,7 +5,7 @@ import type {
   SecurityActivityListResponse,
 } from "../types/security-activity.types";
 
-export const securityActivityService = {
+export const securityActivityService = { //securityActivityService is an object that contains methods for interacting with the security activity API.
   async getActivities(
     page = 1,
     limit = 20,
