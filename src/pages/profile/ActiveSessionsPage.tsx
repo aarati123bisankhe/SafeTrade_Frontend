@@ -7,9 +7,11 @@ import Button from "../../components/common/Button";
 import Card from "../../components/common/Card";
 import Loader from "../../components/common/Loader";
 import PageHeader from "../../components/common/PageHeader";
+import ReauthenticationModal from "../../components/security/ReauthenticationModal";
 import useAuth from "../../hooks/useAuth";
+import authService from "../../services/auth.service";
 import sessionService from "../../services/session.service";
-import type { ActiveSession } from "../../types/auth.types";
+import type { ActiveSession, ReauthenticationAction } from "../../types/auth.types";
 import { getApiErrorMessage } from "../../utils/apiError";
 
 function formatDateTime(value: string) {
@@ -38,7 +40,7 @@ function formatRelativeTime(value: string) {
 }
 
 export default function ActiveSessionsPage() {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
   const [sessions, setSessions] = useState<ActiveSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,6 +49,7 @@ export default function ActiveSessionsPage() {
   const [isRevokingCurrent, setIsRevokingCurrent] = useState(false);
   const [isRevokingOthers, setIsRevokingOthers] = useState(false);
   const [revokingSessionId, setRevokingSessionId] = useState<string | null>(null);
+  const [reauthAction, setReauthAction] = useState<ReauthenticationAction | null>(null);
 
   const loadSessions = async () => {
     setErrorMessage("");
@@ -106,21 +109,23 @@ export default function ActiveSessionsPage() {
   };
 
   const handleRevokeOthers = async () => {
-    const confirmed = window.confirm(
-      "Log out all other devices?\n\nAll other active SafeTrade sessions will be revoked. Your current device will remain signed in."
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
     setErrorMessage("");
     setSuccessMessage("");
-    setIsRevokingOthers(true);
+    setReauthAction("REVOKE_OTHER_SESSIONS");
+  };
 
+  const handleConfirmReauthentication = async (payload: {
+    action: ReauthenticationAction;
+    method: "PASSWORD" | "TOTP" | "RECOVERY_CODE";
+    password?: string;
+    code?: string;
+  }) => {
+    setIsRevokingOthers(true);
     try {
-      await sessionService.revokeOtherSessions();
+      const { reauthToken } = await authService.reauthenticate(payload);
+      await sessionService.revokeOtherSessionsWithReauth(reauthToken);
       setSuccessMessage("All other active devices have been logged out.");
+      setReauthAction(null);
       await loadSessions();
     } catch (error) {
       setErrorMessage(
@@ -225,6 +230,22 @@ export default function ActiveSessionsPage() {
           ))}
         </div>
       )}
+
+      {reauthAction && user ? (
+        <ReauthenticationModal
+          action={reauthAction}
+          user={user}
+          isSubmitting={isRevokingOthers}
+          message="For your security, please verify your identity before logging out all other active devices."
+          onCancel={() => {
+            if (isRevokingOthers) {
+              return;
+            }
+            setReauthAction(null);
+          }}
+          onConfirm={handleConfirmReauthentication}
+        />
+      ) : null}
     </div>
   );
 }

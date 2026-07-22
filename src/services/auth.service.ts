@@ -2,11 +2,14 @@ import api from "./api";
 import type {
   ApiResponse,
   AuthSuccessResponse,
+  ChangePasswordRequest,
   ForgotPasswordRequest,
   ForgotPasswordResponse,
   LoginRequest,
   LoginResponse,
   OAuthExchangeResponse,
+  ReauthenticateRequest,
+  ReauthenticateResponse,
   RegisterRequest,
   RegisterResponse,
   ResetPasswordRequest,
@@ -45,6 +48,7 @@ const mapUser = (user: User): User => {
     role: user.role,
     isEmailVerified: user.isEmailVerified,
     totpEnabled: user.totpEnabled,
+    passwordAuthEnabled: user.passwordAuthEnabled,
     avatarUrl: user.avatarUrl,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
@@ -191,7 +195,45 @@ export const authService = {
   },
 
   async disableTotp(payload: TotpDisableRequest): Promise<void> {
-    await api.post<ApiResponse<null>>("/auth/totp/disable", payload);
+    await api.post<ApiResponse<null>>(
+      "/auth/totp/disable",
+      {},
+      {
+        headers: {
+          "x-reauth-token": payload.reauthToken,
+        },
+      }
+    );
+  },
+
+  async reauthenticate(
+    payload: ReauthenticateRequest
+  ): Promise<ReauthenticateResponse> {
+    const { data } = await api.post<{
+      success: boolean;
+      message: string;
+      reauthToken: string;
+      expiresIn: number;
+    }>("/auth/reauthenticate", payload);
+
+    return {
+      reauthToken: data.reauthToken,
+      expiresIn: data.expiresIn,
+    };
+  },
+
+  async changePassword(payload: ChangePasswordRequest): Promise<{ message: string }> {
+    const { data } = await api.post<ApiResponse<{ message: string }>>(
+      "/auth/change-password",
+      { newPassword: payload.newPassword },
+      {
+        headers: {
+          "x-reauth-token": payload.reauthToken,
+        },
+      }
+    );
+
+    return data.data;
   },
 
   async exchangeGoogleCode(code: string): Promise<OAuthExchangeResponse> {

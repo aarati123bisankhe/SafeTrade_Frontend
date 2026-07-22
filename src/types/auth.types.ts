@@ -7,6 +7,7 @@ export interface User {
   role: UserRole;
   isEmailVerified?: boolean;
   totpEnabled?: boolean;
+  passwordAuthEnabled?: boolean;
   avatarUrl?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -98,9 +99,31 @@ export interface TotpEnableResponse {
 }
 
 export interface TotpDisableRequest {
-  password: string;
+  reauthToken: string;
+}
+
+export type ReauthenticationAction =
+  | "CHANGE_PASSWORD"
+  | "DISABLE_TOTP"
+  | "REVOKE_OTHER_SESSIONS";
+
+export type ReauthenticationMethod = "PASSWORD" | "TOTP" | "RECOVERY_CODE";
+
+export interface ReauthenticateRequest {
+  action: ReauthenticationAction;
+  method: ReauthenticationMethod;
+  password?: string;
   code?: string;
-  recoveryCode?: string;
+}
+
+export interface ReauthenticateResponse {
+  reauthToken: string;
+  expiresIn: number;
+}
+
+export interface ChangePasswordRequest {
+  newPassword: string;
+  reauthToken: string;
 }
 
 export interface OAuthExchangeResponse {

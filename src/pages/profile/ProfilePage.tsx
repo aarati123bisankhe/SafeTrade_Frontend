@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
 
 import Alert from "../../components/common/Alert";
 import Badge from "../../components/common/Badge";
@@ -6,9 +7,11 @@ import Button from "../../components/common/Button";
 import Card from "../../components/common/Card";
 import Input from "../../components/common/Input";
 import Loader from "../../components/common/Loader";
+import ReauthenticationModal from "../../components/security/ReauthenticationModal";
 import useAuth from "../../hooks/useAuth";
 import authService from "../../services/auth.service";
 import securityNotificationService from "../../services/security-notification.service";
+import type { ReauthenticationAction } from "../../types/auth.types";
 import { getApiErrorMessage } from "../../utils/apiError";
 
 const SECURITY_NOTIFICATION_POLLING_MS = 45000;
@@ -55,22 +58,23 @@ function ProfileMetric({
 }
 
 export default function ProfilePage() {
-  const { user, isLoading, refreshCurrentUser } = useAuth();
+  const { user, isLoading, refreshCurrentUser, logout } = useAuth();
+  const navigate = useNavigate();
   const [setupState, setSetupState] = useState<{
     qrCodeDataUrl: string;
     manualKey: string;
   } | null>(null);
   const [setupCode, setSetupCode] = useState("");
-  const [disablePassword, setDisablePassword] = useState("");
-  const [disableCode, setDisableCode] = useState("");
-  const [disableRecoveryCode, setDisableRecoveryCode] = useState("");
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [securityMessage, setSecurityMessage] = useState("");
   const [securityError, setSecurityError] = useState("");
   const [isStartingSetup, setIsStartingSetup] = useState(false);
   const [isEnablingTotp, setIsEnablingTotp] = useState(false);
-  const [isDisablingTotp, setIsDisablingTotp] = useState(false);
+  const [isSensitiveActionPending, setIsSensitiveActionPending] = useState(false);
   const [unreadSecurityNotifications, setUnreadSecurityNotifications] = useState(0);
+  const [reauthAction, setReauthAction] = useState<ReauthenticationAction | null>(null);
 
   const securityOverview = useMemo(() => {
     if (!user) {
@@ -203,29 +207,62 @@ export default function ProfilePage() {
     }
   };
 
-  const handleDisableTotp = async (event: FormEvent<HTMLFormElement>) => {
+  const handleChangePassword = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     resetFeedback();
-    setIsDisablingTotp(true);
+
+    if (newPassword !== confirmNewPassword) {
+      setSecurityError("New password and confirmation must match.");
+      return;
+    }
+
+    setReauthAction("CHANGE_PASSWORD");
+  };
+
+  const handleSensitiveAction = async (action: ReauthenticationAction) => {
+    resetFeedback();
+    setReauthAction(action);
+  };
+
+  const handleConfirmReauthentication = async (payload: {
+    action: ReauthenticationAction;
+    method: "PASSWORD" | "TOTP" | "RECOVERY_CODE";
+    password?: string;
+    code?: string;
+  }) => {
+    setIsSensitiveActionPending(true);
 
     try {
-      await authService.disableTotp({
-        password: disablePassword,
-        code: disableCode.trim() || undefined,
-        recoveryCode: disableRecoveryCode.trim().toUpperCase() || undefined,
-      });
-      setDisablePassword("");
-      setDisableCode("");
-      setDisableRecoveryCode("");
-      setRecoveryCodes([]);
-      await refreshCurrentUser();
-      setSecurityMessage("Two-factor authentication has been disabled.");
+      const { reauthToken } = await authService.reauthenticate(payload);
+
+      if (payload.action === "CHANGE_PASSWORD") {
+        await authService.changePassword({
+          newPassword,
+          reauthToken,
+        });
+        setNewPassword("");
+        setConfirmNewPassword("");
+        setSecurityMessage("Password changed successfully. Please sign in again.");
+        setReauthAction(null);
+        await logout();
+        navigate("/login", { replace: true });
+        return;
+      }
+
+      if (payload.action === "DISABLE_TOTP") {
+        await authService.disableTotp({ reauthToken });
+        setRecoveryCodes([]);
+        await refreshCurrentUser();
+        setSecurityMessage("Two-factor authentication has been disabled.");
+      }
+
+      setReauthAction(null);
     } catch (error) {
       setSecurityError(
-        getApiErrorMessage(error, "We couldn't disable two-factor authentication.")
+        getApiErrorMessage(error, "We couldn't verify your identity for that action.")
       );
     } finally {
-      setIsDisablingTotp(false);
+      setIsSensitiveActionPending(false);
     }
   };
 
@@ -326,9 +363,9 @@ export default function ProfilePage() {
             <div className="profile-list-row">
               <div>
                 <strong>Password security</strong>
-                <span>Password change controls are not yet supported by the backend.</span>
+                <span>Choose a new password and confirm your identity before the change is applied.</span>
               </div>
-              <Badge variant="default">Coming soon</Badge>
+              <Badge variant="info">Protected</Badge>
             </div>
             <div className="profile-list-row">
               <div>
@@ -407,6 +444,37 @@ export default function ProfilePage() {
             </div>
           </div>
 
+          <form className="profile-stack" onSubmit={handleChangePassword}>
+            <div className="profile-list-row">
+              <div>
+                <strong>Change password</strong>
+                <span>This high-risk action requires a short re-authentication step.</span>
+              </div>
+              <Badge variant="warning">Sensitive action</Badge>
+            </div>
+            <Input
+              label="New password"
+              type="password"
+              value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)}
+              autoComplete="new-password"
+              required
+            />
+            <Input
+              label="Confirm new password"
+              type="password"
+              value={confirmNewPassword}
+              onChange={(event) => setConfirmNewPassword(event.target.value)}
+              autoComplete="new-password"
+              required
+            />
+            <div className="profile-coming-soon">
+              <Button type="submit" variant="secondary" disabled={isSensitiveActionPending}>
+                Change password
+              </Button>
+            </div>
+          </form>
+
           {!user.totpEnabled && setupState ? (
             <form className="profile-stack" onSubmit={handleEnableTotp}>
               <div className="profile-list-row">
@@ -460,43 +528,26 @@ export default function ProfilePage() {
           ) : null}
 
           {user.totpEnabled ? (
-            <form className="profile-stack" onSubmit={handleDisableTotp}>
+            <div className="profile-stack">
               <div className="profile-list-row">
                 <div>
                   <strong>Disable TOTP</strong>
-                  <span>Confirm your password and provide either an authenticator code or a recovery code.</span>
+                  <span>Confirm your identity again before turning off two-factor authentication.</span>
                 </div>
                 <Badge variant="warning">Sensitive action</Badge>
               </div>
-              <Input
-                label="Current password"
-                type="password"
-                value={disablePassword}
-                onChange={(event) => setDisablePassword(event.target.value)}
-                autoComplete="current-password"
-                required
-              />
-              <Input
-                label="Authenticator code"
-                value={disableCode}
-                onChange={(event) => setDisableCode(event.target.value)}
-                placeholder="Enter 6-digit code"
-                autoComplete="one-time-code"
-                inputMode="numeric"
-                maxLength={6}
-              />
-              <Input
-                label="Recovery code"
-                value={disableRecoveryCode}
-                onChange={(event) => setDisableRecoveryCode(event.target.value)}
-                placeholder="ABCD-1234"
-              />
               <div className="profile-coming-soon">
-                <Button type="submit" variant="secondary" disabled={isDisablingTotp}>
-                  {isDisablingTotp ? "Disabling..." : "Disable TOTP"}
+                <Button
+                  variant="secondary"
+                  onClick={() => void handleSensitiveAction("DISABLE_TOTP")}
+                  disabled={isSensitiveActionPending}
+                >
+                  {isSensitiveActionPending && reauthAction === "DISABLE_TOTP"
+                    ? "Disabling..."
+                    : "Disable TOTP"}
                 </Button>
               </div>
-            </form>
+            </div>
           ) : null}
 
           {recoveryCodes.length > 0 ? (
@@ -581,6 +632,21 @@ export default function ProfilePage() {
           </div>
         </Card>
       </section>
+
+      {reauthAction ? (
+        <ReauthenticationModal
+          action={reauthAction}
+          user={user}
+          isSubmitting={isSensitiveActionPending}
+          onCancel={() => {
+            if (isSensitiveActionPending) {
+              return;
+            }
+            setReauthAction(null);
+          }}
+          onConfirm={handleConfirmReauthentication}
+        />
+      ) : null}
     </div>
   );
 }

@@ -21,6 +21,14 @@ export const sessionService = {
   async revokeOtherSessions(): Promise<void> {
     await api.delete("/auth/sessions/others");
   },
+
+  async revokeOtherSessionsWithReauth(reauthToken: string): Promise<void> {
+    await api.delete("/auth/sessions/others", {
+      headers: {
+        "x-reauth-token": reauthToken,
+      },
+    });
+  },
 };
 
 export default sessionService;
