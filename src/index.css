@@ -2034,6 +2034,14 @@ ul {
   gap: 4px;
 }
 
+.session-card {
+  gap: 18px;
+}
+
+.session-card__details {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .product-details-shell {
   display: grid;
   grid-template-columns: minmax(320px, 0.95fr) minmax(0, 1.15fr);

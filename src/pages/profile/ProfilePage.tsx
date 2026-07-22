@@ -340,6 +340,18 @@ export default function ProfilePage() {
               </div>
               <Badge variant="default">Limited data</Badge>
             </div>
+            <div className="profile-list-row">
+              <div>
+                <strong>Active Sessions</strong>
+                <span>Review signed-in devices and revoke access without changing the rest of your security setup.</span>
+              </div>
+              <div className="profile-coming-soon">
+                <Badge variant="info">Available</Badge>
+                <Button to="/profile/sessions" variant="secondary">
+                  Manage
+                </Button>
+              </div>
+            </div>
           </div>
 
           {!user.totpEnabled && setupState ? (

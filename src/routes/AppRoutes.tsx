@@ -14,6 +14,7 @@ import DisputesPage from "../pages/buyer/DisputesPage";
 import MyPurchasesPage from "../pages/buyer/MyPurchasesPage";
 import NewDisputePage from "../pages/buyer/NewDisputePage";
 import NotFoundPage from "../pages/errors/NotFoundPage";
+import ActiveSessionsPage from "../pages/profile/ActiveSessionsPage";
 import ProfilePage from "../pages/profile/ProfilePage";
 import ProductDetailsPage from "../pages/products/ProductDetailsPage";
 import ProductsPage from "../pages/products/ProductsPage";
@@ -54,6 +55,10 @@ export default function AppRoutes() {
           <Route
             path="/profile"
             element={<ProfilePage />}
+          />
+          <Route
+            path="/profile/sessions"
+            element={<ActiveSessionsPage />}
           />
           <Route
             element={<RoleProtectedRoute allowedRoles={["BUYER"]} />}

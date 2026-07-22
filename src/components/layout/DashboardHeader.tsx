@@ -15,8 +15,9 @@ export default function DashboardHeader() {
   }
 
   const handleLogout = () => {
-    logout();
-    navigate("/login", { replace: true });
+    void logout().finally(() => {
+      navigate("/login", { replace: true });
+    });
   };
 
   const isNavItemActive = (to: string) => {

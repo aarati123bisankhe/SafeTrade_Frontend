@@ -6,6 +6,7 @@ import {
 } from "react";
 
 import authService from "../services/auth.service"; 
+import sessionService from "../services/session.service";
 import type {
   AuthContextType,
   ForgotPasswordRequest,
@@ -121,9 +122,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return currentUser;
   };
 
-  const logout = () => {
-    authService.logout();
-    setUser(null);
+  const logout = async () => {
+    try {
+      await sessionService.revokeCurrentSession();
+    } catch {
+      // Clear local state even if server-side logout fails.
+    } finally {
+      authService.logout();
+      setUser(null);
+    }
   };
 
   const effectiveUser = user ?? authService.getStoredUser();

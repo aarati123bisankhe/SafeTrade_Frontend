@@ -50,6 +50,16 @@ export interface ResetPasswordResponse {
   message: string;
 }
 
+export interface ActiveSession {
+  id: string;
+  device: string;
+  ipAddress: string;
+  createdAt: string;
+  lastUsedAt: string;
+  expiresAt: string;
+  isCurrent: boolean;
+}
+
 export interface AuthSuccessResponse {
   accessToken: string;
   user: User;
@@ -126,7 +136,7 @@ export interface AuthContextType {
   resetPassword: (
     payload: ResetPasswordRequest
   ) => Promise<ResetPasswordResponse>;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshCurrentUser: () => Promise<User | null>;
   verifyTotp: (
     payload: TotpVerificationRequest
