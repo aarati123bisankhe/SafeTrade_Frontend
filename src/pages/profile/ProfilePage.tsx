@@ -87,7 +87,7 @@ export default function ProfilePage() {
       accountStatus: "Authenticated",
       emailStatus: user.isEmailVerified ? "Verified email" : "Email on file",
       totpStatus: user.totpEnabled ? "Enabled" : "Not enabled",
-      googleStatus: "Status unavailable",
+      googleStatus: user.googleLinked ? "Linked" : "Not linked",
       loginSecurity: user.totpEnabled
         ? "Two-step verification is active for sign-in."
         : "Two-step verification can be added when setup is available.",
@@ -256,6 +256,20 @@ export default function ProfilePage() {
         setSecurityMessage("Two-factor authentication has been disabled.");
       }
 
+      if (payload.action === "REGENERATE_RECOVERY_CODES") {
+        const response = await authService.regenerateRecoveryCodes({ reauthToken });
+        setRecoveryCodes(response.recoveryCodes);
+        setSecurityMessage(
+          "Recovery codes regenerated successfully. All previous recovery codes are no longer valid."
+        );
+      }
+
+      if (payload.action === "UNLINK_GOOGLE") {
+        await authService.unlinkGoogle(reauthToken);
+        await refreshCurrentUser();
+        setSecurityMessage("Google account unlinked successfully.");
+      }
+
       setReauthAction(null);
     } catch (error) {
       setSecurityError(
@@ -407,6 +421,27 @@ export default function ProfilePage() {
               </div>
               <Badge variant="success">Protected</Badge>
             </div>
+            {user.totpEnabled ? (
+              <div className="profile-list-row">
+                <div>
+                  <strong>Recovery code rotation</strong>
+                  <span>Generate a completely new recovery-code set and invalidate every previous code.</span>
+                </div>
+                <div className="profile-coming-soon">
+                  <Badge variant="warning">Sensitive action</Badge>
+                  <Button
+                    variant="secondary"
+                    onClick={() => void handleSensitiveAction("REGENERATE_RECOVERY_CODES")}
+                    disabled={isSensitiveActionPending}
+                  >
+                    {isSensitiveActionPending &&
+                    reauthAction === "REGENERATE_RECOVERY_CODES"
+                      ? "Regenerating..."
+                      : "Regenerate"}
+                  </Button>
+                </div>
+              </div>
+            ) : null}
             <div className="profile-list-row">
               <div>
                 <strong>Login security</strong>
@@ -567,6 +602,24 @@ export default function ProfilePage() {
                   </div>
                 ))}
               </div>
+              {user.totpEnabled ? (
+                <div className="profile-coming-soon">
+                  <Button
+                    variant="secondary"
+                    onClick={() => void handleSensitiveAction("REGENERATE_RECOVERY_CODES")}
+                    disabled={isSensitiveActionPending}
+                  >
+                    {isSensitiveActionPending &&
+                    reauthAction === "REGENERATE_RECOVERY_CODES"
+                      ? "Regenerating..."
+                      : "Regenerate recovery codes"}
+                  </Button>
+                  <span>
+                    Generating new recovery codes will permanently invalidate all
+                    existing recovery codes.
+                  </span>
+                </div>
+              ) : null}
             </div>
           ) : null}
         </Card>
@@ -586,11 +639,13 @@ export default function ProfilePage() {
               <div>
                 <strong>Google account</strong>
                 <span>
-                  SafeTrade has Google OAuth endpoints, but the current profile response does
-                  not expose whether your Google account is linked.
+                  Review whether your SafeTrade account can use Google as a sign-in
+                  method.
                 </span>
               </div>
-              <Badge variant="default">{securityOverview.googleStatus}</Badge>
+              <Badge variant={user.googleLinked ? "success" : "default"}>
+                {securityOverview.googleStatus}
+              </Badge>
             </div>
           </div>
 
@@ -598,7 +653,11 @@ export default function ProfilePage() {
             <Button variant="secondary" disabled>
               Connect Google
             </Button>
-            <Button variant="ghost" disabled>
+            <Button
+              variant="ghost"
+              onClick={() => void handleSensitiveAction("UNLINK_GOOGLE")}
+              disabled={!user.googleLinked || isSensitiveActionPending}
+            >
               Disconnect Google
             </Button>
           </div>
@@ -638,6 +697,13 @@ export default function ProfilePage() {
           action={reauthAction}
           user={user}
           isSubmitting={isSensitiveActionPending}
+          message={
+            reauthAction === "REGENERATE_RECOVERY_CODES"
+              ? "For your security, please verify your identity before generating a new set of recovery codes. Your current recovery codes will stop working immediately."
+              : reauthAction === "UNLINK_GOOGLE"
+                ? "For your security, please verify your identity before removing Google from your SafeTrade sign-in methods."
+                : undefined
+          }
           onCancel={() => {
             if (isSensitiveActionPending) {
               return;

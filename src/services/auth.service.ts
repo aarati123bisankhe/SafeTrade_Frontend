@@ -10,6 +10,7 @@ import type {
   OAuthExchangeResponse,
   ReauthenticateRequest,
   ReauthenticateResponse,
+  RegenerateRecoveryCodesRequest,
   RegisterRequest,
   RegisterResponse,
   ResetPasswordRequest,
@@ -49,6 +50,7 @@ const mapUser = (user: User): User => {
     isEmailVerified: user.isEmailVerified,
     totpEnabled: user.totpEnabled,
     passwordAuthEnabled: user.passwordAuthEnabled,
+    googleLinked: user.googleLinked,
     avatarUrl: user.avatarUrl,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
@@ -234,6 +236,31 @@ export const authService = {
     );
 
     return data.data;
+  },
+
+  async regenerateRecoveryCodes(
+    payload: RegenerateRecoveryCodesRequest
+  ): Promise<TotpEnableResponse> {
+    const { data } = await api.post<ApiResponse<TotpEnableResponse>>(
+      "/auth/totp/recovery-codes/regenerate",
+      {},
+      {
+        headers: {
+          "x-reauth-token": payload.reauthToken,
+        },
+      }
+    );
+
+    return data.data;
+  },
+
+  async unlinkGoogle(reauthToken: string): Promise<void> {
+    await api.delete("/auth/google/unlink", {
+      headers: {
+        "x-reauth-token": reauthToken,
+      },
+      data: {},
+    });
   },
 
   async exchangeGoogleCode(code: string): Promise<OAuthExchangeResponse> {

@@ -8,6 +8,7 @@ export interface User {
   isEmailVerified?: boolean;
   totpEnabled?: boolean;
   passwordAuthEnabled?: boolean;
+  googleLinked?: boolean;
   avatarUrl?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -105,7 +106,9 @@ export interface TotpDisableRequest {
 export type ReauthenticationAction =
   | "CHANGE_PASSWORD"
   | "DISABLE_TOTP"
-  | "REVOKE_OTHER_SESSIONS";
+  | "REVOKE_OTHER_SESSIONS"
+  | "UNLINK_GOOGLE"
+  | "REGENERATE_RECOVERY_CODES";
 
 export type ReauthenticationMethod = "PASSWORD" | "TOTP" | "RECOVERY_CODE";
 
@@ -123,6 +126,10 @@ export interface ReauthenticateResponse {
 
 export interface ChangePasswordRequest {
   newPassword: string;
+  reauthToken: string;
+}
+
+export interface RegenerateRecoveryCodesRequest {
   reauthToken: string;
 }
 
