@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 
 import Alert from "../../components/common/Alert";
 import Badge from "../../components/common/Badge";
@@ -8,7 +8,10 @@ import Input from "../../components/common/Input";
 import Loader from "../../components/common/Loader";
 import useAuth from "../../hooks/useAuth";
 import authService from "../../services/auth.service";
+import securityNotificationService from "../../services/security-notification.service";
 import { getApiErrorMessage } from "../../utils/apiError";
+
+const SECURITY_NOTIFICATION_POLLING_MS = 45000;
 
 function formatRoleLabel(role: string) {
   return role.charAt(0) + role.slice(1).toLowerCase();
@@ -67,6 +70,7 @@ export default function ProfilePage() {
   const [isStartingSetup, setIsStartingSetup] = useState(false);
   const [isEnablingTotp, setIsEnablingTotp] = useState(false);
   const [isDisablingTotp, setIsDisablingTotp] = useState(false);
+  const [unreadSecurityNotifications, setUnreadSecurityNotifications] = useState(0);
 
   const securityOverview = useMemo(() => {
     if (!user) {
@@ -83,6 +87,39 @@ export default function ProfilePage() {
       loginSecurity: user.totpEnabled
         ? "Two-step verification is active for sign-in."
         : "Two-step verification can be added when setup is available.",
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadUnreadCount = async () => {
+      try {
+        const response = await securityNotificationService.getUnreadCount();
+
+        if (isMounted) {
+          setUnreadSecurityNotifications(response.unreadCount);
+        }
+      } catch {
+        if (isMounted) {
+          setUnreadSecurityNotifications(0);
+        }
+      }
+    };
+
+    void loadUnreadCount();
+
+    const intervalId = window.setInterval(() => {
+      void loadUnreadCount();
+    }, SECURITY_NOTIFICATION_POLLING_MS);
+
+    return () => {
+      isMounted = false;
+      window.clearInterval(intervalId);
     };
   }, [user]);
 
@@ -348,6 +385,22 @@ export default function ProfilePage() {
               <div className="profile-coming-soon">
                 <Badge variant="info">Available</Badge>
                 <Button to="/profile/sessions" variant="secondary">
+                  Manage
+                </Button>
+              </div>
+            </div>
+            <div className="profile-list-row">
+              <div>
+                <strong>Security Notifications</strong>
+                <span>Review important account alerts such as new logins, password changes, and session revocations.</span>
+              </div>
+              <div className="profile-coming-soon">
+                <Badge variant={unreadSecurityNotifications > 0 ? "warning" : "info"}>
+                  {unreadSecurityNotifications > 0
+                    ? `${unreadSecurityNotifications} unread`
+                    : "Available"}
+                </Badge>
+                <Button to="/profile/security-notifications" variant="secondary">
                   Manage
                 </Button>
               </div>

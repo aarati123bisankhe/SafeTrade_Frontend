@@ -2042,6 +2042,21 @@ ul {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.security-notification-card__badges {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.security-notification-card__details {
+  margin-top: 12px;
+}
+
+.security-notification-card__actions {
+  margin-top: 12px;
+}
+
 .product-details-shell {
   display: grid;
   grid-template-columns: minmax(320px, 0.95fr) minmax(0, 1.15fr);
