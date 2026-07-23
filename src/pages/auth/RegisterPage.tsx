@@ -107,7 +107,9 @@ export default function RegisterPage() {
           name="password"
           placeholder="Create a password"
           autoComplete="new-password"
-          helperText="Use a strong password you have not used elsewhere."
+          helperText="Use at least 12 characters with uppercase, lowercase, number, and symbol."
+          required
+          showStrengthFeedback
         />
 
         <PasswordInput
@@ -117,6 +119,7 @@ export default function RegisterPage() {
           name="confirmPassword"
           placeholder="Confirm your password"
           autoComplete="new-password"
+          required
         />
 
         <Button type="submit" fullWidth size="lg" disabled={isSubmitting}>

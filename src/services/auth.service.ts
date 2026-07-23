@@ -52,6 +52,11 @@ const mapUser = (user: User): User => {
     passwordAuthEnabled: user.passwordAuthEnabled,
     googleLinked: user.googleLinked,
     avatarUrl: user.avatarUrl,
+    passwordChangedAt: user.passwordChangedAt,
+    passwordExpiresAt: user.passwordExpiresAt,
+    passwordChangeRequired: user.passwordChangeRequired,
+    passwordExpiresSoon: user.passwordExpiresSoon,
+    passwordExpiresInDays: user.passwordExpiresInDays,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };

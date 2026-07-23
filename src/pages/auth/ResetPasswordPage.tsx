@@ -104,7 +104,9 @@ export default function ResetPasswordPage() {
           name="password"
           placeholder="Create a new password"
           autoComplete="new-password"
-          helperText="Use a strong password you have not used elsewhere."
+          helperText="Use at least 12 characters with uppercase, lowercase, number, and symbol."
+          required
+          showStrengthFeedback
         />
 
         <PasswordInput
@@ -114,6 +116,7 @@ export default function ResetPasswordPage() {
           name="confirmPassword"
           placeholder="Confirm your new password"
           autoComplete="new-password"
+          required
         />
 
         <Button

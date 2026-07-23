@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import Alert from "../../components/common/Alert";
 import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
 import Card from "../../components/common/Card";
+import PasswordInput from "../../components/auth/PasswordInput";
 import Input from "../../components/common/Input";
 import Loader from "../../components/common/Loader";
 import ReauthenticationModal from "../../components/security/ReauthenticationModal";
@@ -60,6 +61,7 @@ function ProfileMetric({
 export default function ProfilePage() {
   const { user, isLoading, refreshCurrentUser, logout } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [setupState, setSetupState] = useState<{
     qrCodeDataUrl: string;
     manualKey: string;
@@ -88,6 +90,11 @@ export default function ProfilePage() {
       emailStatus: user.isEmailVerified ? "Verified email" : "Email on file",
       totpStatus: user.totpEnabled ? "Enabled" : "Not enabled",
       googleStatus: user.googleLinked ? "Linked" : "Not linked",
+      passwordExpiryStatus: user.passwordChangeRequired
+        ? "Change required now"
+        : user.passwordExpiresSoon
+          ? `Expires in ${user.passwordExpiresInDays ?? "a few"} days`
+          : "Up to date",
       loginSecurity: user.totpEnabled
         ? "Two-step verification is active for sign-in."
         : "Two-step verification can be added when setup is available.",
@@ -373,13 +380,34 @@ export default function ProfilePage() {
             </Alert>
           ) : null}
 
+          {user.passwordChangeRequired ? (
+            <Alert variant="error" title="Password change required">
+              Your password has expired. Change it now to continue using the rest of your account safely.
+            </Alert>
+          ) : null}
+
+          {!user.passwordChangeRequired && user.passwordExpiresSoon ? (
+            <Alert variant="warning" title="Password expiry warning">
+              Your password will expire in {user.passwordExpiresInDays ?? "a few"} day
+              {user.passwordExpiresInDays === 1 ? "" : "s"}. Update it now to avoid interruption.
+            </Alert>
+          ) : null}
+
+          {searchParams.get("passwordFlow") === "expired" && !user.passwordChangeRequired ? (
+            <Alert variant="warning" title="Password updated">
+              Your password-expiry restriction has been cleared. You can continue using the rest of your account.
+            </Alert>
+          ) : null}
+
           <div className="profile-stack">
             <div className="profile-list-row">
               <div>
                 <strong>Password security</strong>
-                <span>Choose a new password and confirm your identity before the change is applied.</span>
+                <span>Choose a strong password, avoid reusing recent passwords, and confirm your identity before the change is applied.</span>
               </div>
-              <Badge variant="info">Protected</Badge>
+              <Badge variant={user.passwordChangeRequired ? "danger" : user.passwordExpiresSoon ? "warning" : "info"}>
+                {securityOverview.passwordExpiryStatus}
+              </Badge>
             </div>
             <div className="profile-list-row">
               <div>
@@ -492,25 +520,29 @@ export default function ProfilePage() {
               </div>
               <Badge variant="warning">Sensitive action</Badge>
             </div>
-            <Input
-              label="New password"
-              type="password"
-              value={newPassword}
-              onChange={(event) => setNewPassword(event.target.value)}
-              autoComplete="new-password"
-              required
-            />
-            <Input
-              label="Confirm new password"
-              type="password"
-              value={confirmNewPassword}
-              onChange={(event) => setConfirmNewPassword(event.target.value)}
-              autoComplete="new-password"
-              required
-            />
+            <div className="profile-password-fields">
+              <PasswordInput
+                label="New password"
+                value={newPassword}
+                onChange={setNewPassword}
+                name="newPassword"
+                autoComplete="new-password"
+                helperText="Use at least 12 characters with uppercase, lowercase, number, and symbol."
+                required
+                showStrengthFeedback
+              />
+              <PasswordInput
+                label="Confirm new password"
+                value={confirmNewPassword}
+                onChange={setConfirmNewPassword}
+                name="confirmNewPassword"
+                autoComplete="new-password"
+                required
+              />
+            </div>
             <div className="profile-coming-soon">
               <Button type="submit" variant="secondary" disabled={isSensitiveActionPending}>
-                Change password
+                {user.passwordChangeRequired ? "Change password now" : "Change password"}
               </Button>
             </div>
           </form>

@@ -897,6 +897,12 @@ ul {
   color: #1d4ed8;
 }
 
+.ui-alert--warning {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.24);
+  color: #92400e;
+}
+
 .ui-loader {
   display: inline-flex;
   align-items: center;
@@ -2084,6 +2090,69 @@ ul {
   border: 1px solid rgba(15, 23, 42, 0.12);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.96);
+}
+
+.password-strength {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.password-strength__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--color-text-soft);
+  font-size: 0.92rem;
+}
+
+.password-strength__bar {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+}
+
+.password-strength__fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 180ms ease;
+}
+
+.password-strength__fill--weak {
+  background: #dc2626;
+}
+
+.password-strength__fill--fair {
+  background: #d97706;
+}
+
+.password-strength__fill--strong {
+  background: #2563eb;
+}
+
+.password-strength__fill--very-strong {
+  background: #059669;
+}
+
+.password-strength__requirements {
+  display: grid;
+  gap: 6px;
+}
+
+.password-strength__requirement {
+  color: var(--color-text-soft);
+  font-size: 0.88rem;
+}
+
+.password-strength__requirement--met {
+  color: #047857;
+}
+
+.profile-password-fields {
+  display: grid;
+  gap: 16px;
 }
 
 .product-details-shell {

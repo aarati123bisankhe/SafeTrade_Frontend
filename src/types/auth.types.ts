@@ -10,6 +10,11 @@ export interface User {
   passwordAuthEnabled?: boolean;
   googleLinked?: boolean;
   avatarUrl?: string;
+  passwordChangedAt?: string;
+  passwordExpiresAt?: string;
+  passwordChangeRequired?: boolean;
+  passwordExpiresSoon?: boolean;
+  passwordExpiresInDays?: number | null;
   createdAt?: string;
   updatedAt?: string;
 }

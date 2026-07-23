@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-type AlertVariant = "error" | "success" | "info";
+type AlertVariant = "error" | "success" | "info" | "warning";
 
 type AlertProps = {
   title?: string;
