@@ -20,12 +20,12 @@ export default function OAuthCallbackPage() {
   const [message, setMessage] = useState("Connecting your Google account...");
   const code = searchParams.get("code");
 
-  if (isAuthenticated && user) {
-    redirectToDashboard(user.role);
-    return null;
-  }
-
   useEffect(() => {
+    if (isAuthenticated && user) {
+      redirectToDashboard(user.role);
+      return;
+    }
+
     if (hasProcessed.current) {
       return;
     }
@@ -55,7 +55,11 @@ export default function OAuthCallbackPage() {
     };
 
     void handleExchange();
-  }, [code, exchangeGoogleCode]);
+  }, [code, exchangeGoogleCode, isAuthenticated, user]);
+
+  if (isAuthenticated && user) {
+    return null;
+  }
 
   return (
     <AuthLayout
