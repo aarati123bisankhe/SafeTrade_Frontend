@@ -15,7 +15,7 @@ import securityNotificationService from "../../services/security-notification.se
 import type { ReauthenticationAction } from "../../types/auth.types";
 import { getApiErrorMessage } from "../../utils/apiError";
 
-const SECURITY_NOTIFICATION_POLLING_MS = 45000; // Poll for unread security notifications every 45 seconds
+const SECURITY_NOTIFICATION_POLLING_MS = 45000; 
 const PROFILE_CATEGORY_OPTIONS = [
   "BOOKS",
   "ELECTRONICS",
