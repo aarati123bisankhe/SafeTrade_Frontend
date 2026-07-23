@@ -1,16 +1,13 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { Link, Navigate } from "react-router-dom";
 
 import AuthLayout from "../../components/auth/AuthLayout";
-import CaptchaChallenge from "../../components/auth/CaptchaChallenge";
 import PasswordInput from "../../components/auth/PasswordInput";
 import SocialLoginButton from "../../components/auth/SocialLoginButton";
 import Alert from "../../components/common/Alert";
 import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
 import useAuth from "../../hooks/useAuth";
-import captchaService from "../../services/captcha.service";
-import type { CaptchaChallenge as CaptchaChallengeType } from "../../types/auth.types";
 import { getApiErrorMessage } from "../../utils/apiError";
 import { getDashboardRouteByRole } from "../../utils/authRedirect";
 
@@ -20,27 +17,10 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [captcha, setCaptcha] = useState<CaptchaChallengeType | null>(null);
-  const [captchaAnswer, setCaptchaAnswer] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isRefreshingCaptcha, setIsRefreshingCaptcha] = useState(false);
-
-  useEffect(() => {
-    const loadCaptcha = async () => {
-      setIsRefreshingCaptcha(true);
-      try {
-        const challenge = await captchaService.getChallenge("REGISTER");
-        setCaptcha(challenge);
-      } finally {
-        setIsRefreshingCaptcha(false);
-      }
-    };
-
-    void loadCaptcha();
-  }, []);
 
   if (isAuthenticated && user) {
     return <Navigate to={getDashboardRouteByRole(user.role)} replace />;
@@ -64,8 +44,6 @@ export default function RegisterPage() {
         username,
         email,
         password,
-        captchaToken: captcha?.captchaToken ?? "",
-        captchaAnswer,
       });
 
       setSuccessMessage(
@@ -80,9 +58,6 @@ export default function RegisterPage() {
       setErrorMessage(
         getApiErrorMessage(error, "We couldn't create your account.")
       );
-      setCaptchaAnswer("");
-      const challenge = await captchaService.getChallenge("REGISTER");
-      setCaptcha(challenge);
     } finally {
       setIsSubmitting(false);
     }
@@ -146,25 +121,6 @@ export default function RegisterPage() {
           placeholder="Confirm your password"
           autoComplete="new-password"
           required
-        />
-
-        <CaptchaChallenge
-          challenge={captcha}
-          answer={captchaAnswer}
-          onAnswerChange={setCaptchaAnswer}
-          onRefresh={() => {
-            void (async () => {
-              setIsRefreshingCaptcha(true);
-              try {
-                const challenge = await captchaService.getChallenge("REGISTER");
-                setCaptcha(challenge);
-                setCaptchaAnswer("");
-              } finally {
-                setIsRefreshingCaptcha(false);
-              }
-            })();
-          }}
-          isRefreshing={isRefreshingCaptcha}
         />
 
         <Button type="submit" fullWidth size="lg" disabled={isSubmitting}>

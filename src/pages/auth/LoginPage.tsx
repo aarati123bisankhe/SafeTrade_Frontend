@@ -1,18 +1,15 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { Link, Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 import AuthLayout from "../../components/auth/AuthLayout";
-import CaptchaChallenge from "../../components/auth/CaptchaChallenge";
 import PasswordInput from "../../components/auth/PasswordInput";
 import SocialLoginButton from "../../components/auth/SocialLoginButton";
 import Alert from "../../components/common/Alert";
 import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
 import useAuth from "../../hooks/useAuth";
-import captchaService from "../../services/captcha.service";
 import { getApiErrorMessage } from "../../utils/apiError";
 import { getDashboardRouteByRole } from "../../utils/authRedirect";
-import type { CaptchaChallenge as CaptchaChallengeType } from "../../types/auth.types";
 
 export default function LoginPage() {
   const { login, isAuthenticated, user } = useAuth();
@@ -26,13 +23,10 @@ export default function LoginPage() {
     locationState?.email ?? ""
   );
   const [password, setPassword] = useState("");
-  const [captcha, setCaptcha] = useState<CaptchaChallengeType | null>(null);
-  const [captchaAnswer, setCaptchaAnswer] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage] = useState(locationState?.message ?? "");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isRefreshingCaptcha, setIsRefreshingCaptcha] = useState(false);
   const oauthErrorMessage = useMemo(() => {
     const error = searchParams.get("error");
 
@@ -42,20 +36,6 @@ export default function LoginPage() {
 
     return decodeURIComponent(error);
   }, [searchParams]);
-
-  useEffect(() => {
-    const loadCaptcha = async () => {
-      setIsRefreshingCaptcha(true);
-      try {
-        const challenge = await captchaService.getChallenge("LOGIN");
-        setCaptcha(challenge);
-      } finally {
-        setIsRefreshingCaptcha(false);
-      }
-    };
-
-    void loadCaptcha();
-  }, []);
 
   if (isAuthenticated && user) {
     return <Navigate to={getDashboardRouteByRole(user.role)} replace />;
@@ -70,8 +50,6 @@ export default function LoginPage() {
       const response = await login({
         email,
         password,
-        captchaToken: captcha?.captchaToken ?? "",
-        captchaAnswer,
       });
 
       if ("requiresTotp" in response && response.requiresTotp) {
@@ -84,9 +62,6 @@ export default function LoginPage() {
       }
     } catch (error) {
       setErrorMessage(getApiErrorMessage(error, "We couldn't sign you in."));
-      setCaptchaAnswer("");
-      const challenge = await captchaService.getChallenge("LOGIN");
-      setCaptcha(challenge);
     } finally {
       setIsSubmitting(false);
     }
@@ -158,25 +133,6 @@ export default function LoginPage() {
             Forgot password?
           </Link>
         </div>
-
-        <CaptchaChallenge
-          challenge={captcha}
-          answer={captchaAnswer}
-          onAnswerChange={setCaptchaAnswer}
-          onRefresh={() => {
-            void (async () => {
-              setIsRefreshingCaptcha(true);
-              try {
-                const challenge = await captchaService.getChallenge("LOGIN");
-                setCaptcha(challenge);
-                setCaptchaAnswer("");
-              } finally {
-                setIsRefreshingCaptcha(false);
-              }
-            })();
-          }}
-          isRefreshing={isRefreshingCaptcha}
-        />
 
         <Button type="submit" fullWidth size="lg" disabled={isSubmitting}>
           {isSubmitting ? "Signing in..." : "Sign in"}

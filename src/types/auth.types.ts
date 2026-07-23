@@ -28,8 +28,6 @@ export interface RegisterRequest {
   username: string;
   email: string;
   password: string;
-  captchaToken: string;
-  captchaAnswer: string;
 }
 
 export interface RegisterResponse {
@@ -42,14 +40,10 @@ export interface RegisterResponse {
 export interface LoginRequest {
   email: string;
   password: string;
-  captchaToken: string;
-  captchaAnswer: string;
 }
 
 export interface ForgotPasswordRequest {
   email: string;
-  captchaToken: string;
-  captchaAnswer: string;
 }
 
 export interface ForgotPasswordResponse {  //forgot password response interface that defines the structure of the response returned by the API when a user requests a password reset. It includes the email address of the user, a boolean indicating whether the email delivery was requested successfully, the expiration time of the reset token in minutes, and an optional preview URL for testing purposes.
@@ -61,8 +55,6 @@ export interface ForgotPasswordResponse {  //forgot password response interface 
 export interface ResetPasswordRequest {
   token: string;
   password: string;
-  captchaToken: string;
-  captchaAnswer: string;
 }
 
 export interface ResetPasswordResponse {
@@ -161,14 +153,6 @@ export interface ApiResponse<T> {
   success: boolean;
   message: string;
   data: T;
-}
-
-export type CaptchaIntent = "LOGIN" | "REGISTER" | "PASSWORD_RESET";
-
-export interface CaptchaChallenge {
-  prompt: string;
-  captchaToken: string;
-  expiresInSeconds: number;
 }
 
 export interface ProfileUpdateRequest {
