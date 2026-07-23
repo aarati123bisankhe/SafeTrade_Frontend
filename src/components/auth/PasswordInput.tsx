@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import Input from "../common/Input"; 
-import { getPasswordStrength } from "../../utils/passwordPolicy";
+import { evaluatePasswordStrength } from "../../utils/passwordPolicy";
 
 type PasswordInputProps = { 
   label: string;
@@ -13,6 +13,7 @@ type PasswordInputProps = {
   autoComplete?: string;
   required?: boolean;
   showStrengthFeedback?: boolean;
+  userInputs?: string[];
 };
 
 export default function PasswordInput({
@@ -25,9 +26,13 @@ export default function PasswordInput({
   autoComplete,
   required = false,
   showStrengthFeedback = false,
+  userInputs = [],
 }: PasswordInputProps) {
   const [isVisible, setIsVisible] = useState(false);
-  const strength = showStrengthFeedback ? getPasswordStrength(value) : null;
+  const strength = showStrengthFeedback
+    && value.trim().length > 0
+    ? evaluatePasswordStrength(value, userInputs)
+    : null;
 
   return (
     <div className="password-field">
@@ -52,29 +57,41 @@ export default function PasswordInput({
       {strength ? (
         <div className="password-strength">
           <div className="password-strength__header">
-            <strong>Password strength</strong>
-            <span>{strength.label}</span>
+            <strong>Password strength: {strength.label}</strong>
+            <span>{strength.score}/4</span>
           </div>
+          {strength.label === "Weak" ? (
+            <p className="password-strength__message">
+              Your password is too weak. Make it stronger before continuing.
+            </p>
+          ) : strength.label === "Fair" ? (
+            <p className="password-strength__message">
+              Make your password stronger before continuing.
+            </p>
+          ) : (
+            <p className="password-strength__message password-strength__message--positive">
+              Your password is meeting the main security checks.
+            </p>
+          )}
           <div className="password-strength__bar" aria-hidden="true">
             <span
               className={`password-strength__fill password-strength__fill--${strength.label.toLowerCase().replace(/\s+/g, "-")}`}
-              style={{ width: `${(strength.score / 5) * 100}%` }}
+              style={{ width: `${(strength.score / 4) * 100}%` }}
             />
           </div>
-          <div className="password-strength__requirements">
-            {strength.requirements.map((requirement) => (
-              <span
-                key={requirement.label}
-                className={
-                  requirement.met
-                    ? "password-strength__requirement password-strength__requirement--met"
-                    : "password-strength__requirement"
-                }
-              >
-                {requirement.met ? "OK" : "Need"} {requirement.label}
-              </span>
-            ))}
-          </div>
+          {strength.suggestions.length > 0 ? (
+            <div className="password-strength__guidance">
+              <p>Make your password stronger:</p>
+              <ul className="password-strength__suggestions">
+                {strength.suggestions.map((suggestion) => (
+                  <li key={suggestion}>{suggestion}</li>
+                ))}
+              </ul>
+              <p className="password-strength__example">
+                Stronger example: <span>Orbit@2026Market!</span>
+              </p>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>

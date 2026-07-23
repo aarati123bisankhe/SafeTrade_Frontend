@@ -104,7 +104,7 @@ export default function ResetPasswordPage() {
           name="password"
           placeholder="Create a new password"
           autoComplete="new-password"
-          helperText="Use at least 12 characters with uppercase, lowercase, number, and symbol."
+          helperText="Choose a stronger password with at least 12 characters, uppercase and lowercase letters, a number, and a special character."
           required
           showStrengthFeedback
         />

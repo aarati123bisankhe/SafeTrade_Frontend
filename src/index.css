@@ -2106,6 +2106,16 @@ ul {
   font-size: 0.92rem;
 }
 
+.password-strength__message {
+  margin: 0;
+  color: var(--color-body);
+  font-size: 0.9rem;
+}
+
+.password-strength__message--positive {
+  color: #047857;
+}
+
 .password-strength__bar {
   height: 10px;
   border-radius: 999px;
@@ -2136,18 +2146,30 @@ ul {
   background: #059669;
 }
 
-.password-strength__requirements {
+.password-strength__guidance {
+  display: grid;
+  gap: 8px;
+}
+
+.password-strength__guidance p {
+  margin: 0;
+  color: var(--color-body);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.password-strength__suggestions {
+  margin: 0;
+  padding-left: 18px;
   display: grid;
   gap: 6px;
-}
-
-.password-strength__requirement {
   color: var(--color-text-soft);
-  font-size: 0.88rem;
+  font-size: 0.86rem;
 }
 
-.password-strength__requirement--met {
-  color: #047857;
+.password-strength__example span {
+  color: var(--color-heading);
+  font-weight: 700;
 }
 
 .profile-password-fields {
