@@ -3,7 +3,7 @@ import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import Button from "../common/Button";
 import Badge from "../common/Badge";
 import useAuth from "../../hooks/useAuth";
-import { getNavigationItems } from "./Sidebar";
+import { getNavigationItems } from "./navigationItems";
 
 export default function DashboardHeader() {
   const { user, logout } = useAuth();

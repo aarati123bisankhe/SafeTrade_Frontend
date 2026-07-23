@@ -1,7 +1,7 @@
 import { NavLink } from "react-router-dom";
 
 import useAuth from "../../hooks/useAuth";
-import { getNavigationItems } from "./Sidebar";
+import { getNavigationItems } from "./navigationItems";
 
 export default function MobileNavigation() {
   const { user } = useAuth();

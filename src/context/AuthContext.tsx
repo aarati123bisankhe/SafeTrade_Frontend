@@ -1,12 +1,8 @@
-import {
-  createContext,
-  useEffect,
-  useState,
-  type ReactNode,
-} from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
-import authService from "../services/auth.service"; 
+import authService from "../services/auth.service";
 import sessionService from "../services/session.service";
+import { AuthContext } from "./auth-context";
 import type {
   AuthContextType,
   ForgotPasswordRequest,
@@ -16,10 +12,6 @@ import type {
   TotpVerificationRequest,
   User,
 } from "../types/auth.types";
-
-export const AuthContext = createContext<AuthContextType | undefined>(
-  undefined
-);
 
 type AuthProviderProps = {
   children: ReactNode;
@@ -45,7 +37,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     void restoreSession();
   }, []);
 
-  const register = async (data: RegisterRequest) => { 
+  const register = async (data: RegisterRequest) => {
     return authService.register(data);
   };
 
@@ -91,7 +83,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return response;
   };
 
-  const exchangeGoogleCode = async (code: string) => { 
+  const exchangeGoogleCode = async (code: string) => {
     const response = await authService.exchangeGoogleCode(code);
 
     authService.saveAccessToken(response.accessToken);
@@ -105,7 +97,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   };
 
-  const refreshCurrentUser = async () => { 
+  const refreshCurrentUser = async () => {
     const currentUser = await authService.getCurrentUser();
     setUser(currentUser);
 
