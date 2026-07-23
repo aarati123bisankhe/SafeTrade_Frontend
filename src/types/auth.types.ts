@@ -4,12 +4,17 @@ export interface User {
   id: string;
   username: string;
   email: string;
+  displayName?: string | null;
   role: UserRole;
   isEmailVerified?: boolean;
   totpEnabled?: boolean;
   passwordAuthEnabled?: boolean;
   googleLinked?: boolean;
   avatarUrl?: string;
+  bio?: string | null;
+  city?: string | null;
+  favoriteCategory?: string | null;
+  emailDigestEnabled?: boolean;
   passwordChangedAt?: string;
   passwordExpiresAt?: string;
   passwordChangeRequired?: boolean;
@@ -23,6 +28,8 @@ export interface RegisterRequest {
   username: string;
   email: string;
   password: string;
+  captchaToken: string;
+  captchaAnswer: string;
 }
 
 export interface RegisterResponse {
@@ -35,13 +42,17 @@ export interface RegisterResponse {
 export interface LoginRequest {
   email: string;
   password: string;
+  captchaToken: string;
+  captchaAnswer: string;
 }
 
 export interface ForgotPasswordRequest {
   email: string;
+  captchaToken: string;
+  captchaAnswer: string;
 }
 
-export interface ForgotPasswordResponse {
+export interface ForgotPasswordResponse {  //forgot password response interface that defines the structure of the response returned by the API when a user requests a password reset. It includes the email address of the user, a boolean indicating whether the email delivery was requested successfully, the expiration time of the reset token in minutes, and an optional preview URL for testing purposes.
   emailDeliveryRequested: true;
   expiresInMinutes: number;
   previewUrl?: string;
@@ -50,6 +61,8 @@ export interface ForgotPasswordResponse {
 export interface ResetPasswordRequest {
   token: string;
   password: string;
+  captchaToken: string;
+  captchaAnswer: string;
 }
 
 export interface ResetPasswordResponse {
@@ -148,6 +161,49 @@ export interface ApiResponse<T> {
   success: boolean;
   message: string;
   data: T;
+}
+
+export type CaptchaIntent = "LOGIN" | "REGISTER" | "PASSWORD_RESET";
+
+export interface CaptchaChallenge {
+  prompt: string;
+  captchaToken: string;
+  expiresInSeconds: number;
+}
+
+export interface ProfileUpdateRequest {
+  displayName?: string | null;
+  avatarUrl?: string | null;
+  bio?: string | null;
+  city?: string | null;
+  favoriteCategory?: string | null;
+  emailDigestEnabled?: boolean;
+}
+
+export interface ProfileExportResponse {
+  exportedAt: string;
+  profile: {
+    username: string;
+    email: string;
+    displayName: string | null;
+    avatarUrl: string | null;
+    bio: string | null;
+    city: string | null;
+    favoriteCategory: string | null;
+    emailDigestEnabled: boolean;
+    role: UserRole;
+    createdAt: string;
+    updatedAt: string;
+  };
+  securityPreferences: {
+    totpEnabled: boolean;
+    passwordChangeRequired: boolean;
+    emailDigestEnabled: boolean;
+  };
+  linkedAccounts: {
+    googleLinked: boolean;
+  };
+  privacyNotice: string;
 }
 
 export interface ApiErrorResponse {

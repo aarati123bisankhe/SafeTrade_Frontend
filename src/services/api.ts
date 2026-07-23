@@ -9,25 +9,15 @@ const API_BASE_URL =
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-api.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    const accessToken = sessionStorage.getItem("accessToken");
-
-    if (accessToken) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
-    }
-
-    return config;
-  },
-  (error: AxiosError) => {
-    return Promise.reject(error);
-  }
-);
+api.interceptors.request.use((config: InternalAxiosRequestConfig) => config, (error: AxiosError) => {
+  return Promise.reject(error);
+});
 
 api.interceptors.response.use(
   (response) => response,

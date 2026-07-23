@@ -3,6 +3,8 @@ import type {
   ApiResponse,
   AuthSuccessResponse,
   ChangePasswordRequest,
+  ProfileExportResponse,
+  ProfileUpdateRequest,
   ForgotPasswordRequest,
   ForgotPasswordResponse,
   LoginRequest,
@@ -24,20 +26,14 @@ import type {
   User,
 } from "../types/auth.types";
 
-const ACCESS_TOKEN_KEY = "accessToken";
 const CURRENT_USER_KEY = "currentUser";
 const MFA_TOKEN_KEY = "mfaToken";
 
-const persistAuthenticatedSession = (
-  accessToken: string,
-  user: User
-): void => {
-  sessionStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+const persistAuthenticatedSession = (user: User): void => {
   sessionStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
 };
 
 const clearAuthenticatedSession = (): void => {
-  sessionStorage.removeItem(ACCESS_TOKEN_KEY);
   sessionStorage.removeItem(CURRENT_USER_KEY);
 };
 
@@ -46,12 +42,17 @@ const mapUser = (user: User): User => {
     id: user.id,
     username: user.username,
     email: user.email,
+    displayName: user.displayName,
     role: user.role,
     isEmailVerified: user.isEmailVerified,
     totpEnabled: user.totpEnabled,
     passwordAuthEnabled: user.passwordAuthEnabled,
     googleLinked: user.googleLinked,
     avatarUrl: user.avatarUrl,
+    bio: user.bio,
+    city: user.city,
+    favoriteCategory: user.favoriteCategory,
+    emailDigestEnabled: user.emailDigestEnabled,
     passwordChangedAt: user.passwordChangedAt,
     passwordExpiresAt: user.passwordExpiresAt,
     passwordChangeRequired: user.passwordChangeRequired,
@@ -89,7 +90,7 @@ export const authService = {
     return data.data;
   },
 
-  async requestPasswordReset(
+  async requestPasswordReset( //forgot password request function that sends a POST request to the /auth/forgot-password endpoint with the provided payload and returns the response data.
     payload: ForgotPasswordRequest
   ): Promise<ForgotPasswordResponse> {
     const { data } = await api.post<ApiResponse<ForgotPasswordResponse>>(
@@ -123,11 +124,7 @@ export const authService = {
 
     if ("token" in responseData) {
       const normalizedResponse = normalizeAuthSuccess(responseData);
-
-      persistAuthenticatedSession(
-        normalizedResponse.accessToken,
-        normalizedResponse.user
-      );
+      persistAuthenticatedSession(normalizedResponse.user);
       sessionStorage.removeItem(MFA_TOKEN_KEY);
 
       return normalizedResponse;
@@ -153,11 +150,7 @@ export const authService = {
     );
 
     const normalizedResponse = normalizeAuthSuccess(data.data);
-
-    persistAuthenticatedSession(
-      normalizedResponse.accessToken,
-      normalizedResponse.user
-    );
+    persistAuthenticatedSession(normalizedResponse.user);
     sessionStorage.removeItem(MFA_TOKEN_KEY);
 
     return normalizedResponse;
@@ -172,11 +165,7 @@ export const authService = {
     );
 
     const normalizedResponse = normalizeAuthSuccess(data.data);
-
-    persistAuthenticatedSession(
-      normalizedResponse.accessToken,
-      normalizedResponse.user
-    );
+    persistAuthenticatedSession(normalizedResponse.user);
     sessionStorage.removeItem(MFA_TOKEN_KEY);
 
     return normalizedResponse;
@@ -275,11 +264,7 @@ export const authService = {
     );
 
     const normalizedResponse = normalizeAuthSuccess(data.data);
-
-    persistAuthenticatedSession(
-      normalizedResponse.accessToken,
-      normalizedResponse.user
-    );
+    persistAuthenticatedSession(normalizedResponse.user);
     sessionStorage.removeItem(MFA_TOKEN_KEY);
 
     return normalizedResponse;
@@ -292,6 +277,30 @@ export const authService = {
 
     sessionStorage.setItem(CURRENT_USER_KEY, JSON.stringify(currentUser));
 
+    return currentUser;
+  },
+
+  async updateProfile(payload: ProfileUpdateRequest): Promise<User> {
+    const { data } = await api.put<ApiResponse<User>>("/auth/profile", payload);
+    const currentUser = mapUser(data.data);
+    sessionStorage.setItem(CURRENT_USER_KEY, JSON.stringify(currentUser));
+    return currentUser;
+  },
+
+  async exportProfile(): Promise<ProfileExportResponse> {
+    const { data } = await api.get<ApiResponse<ProfileExportResponse>>(
+      "/auth/profile/export"
+    );
+
+    return data.data;
+  },
+
+  async importProfile(profile: ProfileUpdateRequest): Promise<User> {
+    const { data } = await api.post<ApiResponse<User>>("/auth/profile/import", {
+      profile,
+    });
+    const currentUser = mapUser(data.data);
+    sessionStorage.setItem(CURRENT_USER_KEY, JSON.stringify(currentUser));
     return currentUser;
   },
 
@@ -311,19 +320,19 @@ export const authService = {
   },
 
   getStoredAccessToken(): string | null {
-    return sessionStorage.getItem(ACCESS_TOKEN_KEY);
+    return null;
   },
 
   getAccessToken(): string | null {
-    return sessionStorage.getItem(ACCESS_TOKEN_KEY);
+    return null;
   },
 
   getStoredMfaToken(): string | null {
     return sessionStorage.getItem(MFA_TOKEN_KEY);
   },
 
-  saveAccessToken(accessToken: string): void {
-    sessionStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  saveAccessToken(_accessToken: string): void {
+    // The browser now relies on the secure HttpOnly auth cookie set by the backend.
   },
 
   saveCurrentUser(user: User): void {

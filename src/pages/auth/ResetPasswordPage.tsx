@@ -1,11 +1,14 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import AuthLayout from "../../components/auth/AuthLayout";
+import CaptchaChallenge from "../../components/auth/CaptchaChallenge";
 import PasswordInput from "../../components/auth/PasswordInput";
 import Alert from "../../components/common/Alert";
 import Button from "../../components/common/Button";
 import useAuth from "../../hooks/useAuth";
+import captchaService from "../../services/captcha.service";
+import type { CaptchaChallenge as CaptchaChallengeType } from "../../types/auth.types";
 import { getApiErrorMessage } from "../../utils/apiError";
 
 export default function ResetPasswordPage() {
@@ -15,9 +18,26 @@ export default function ResetPasswordPage() {
   const token = searchParams.get("token") ?? "";
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [captcha, setCaptcha] = useState<CaptchaChallengeType | null>(null);
+  const [captchaAnswer, setCaptchaAnswer] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRefreshingCaptcha, setIsRefreshingCaptcha] = useState(false);
+
+  useEffect(() => {
+    const loadCaptcha = async () => {
+      setIsRefreshingCaptcha(true);
+      try {
+        const challenge = await captchaService.getChallenge("PASSWORD_RESET");
+        setCaptcha(challenge);
+      } finally {
+        setIsRefreshingCaptcha(false);
+      }
+    };
+
+    void loadCaptcha();
+  }, []);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -39,7 +59,12 @@ export default function ResetPasswordPage() {
     setIsSubmitting(true);
 
     try {
-      const response = await resetPassword({ token, password });
+      const response = await resetPassword({
+        token,
+        password,
+        captchaToken: captcha?.captchaToken ?? "",
+        captchaAnswer,
+      });
 
       setSuccessMessage(response.message);
 
@@ -59,6 +84,9 @@ export default function ResetPasswordPage() {
           "We couldn't reset your password. Please request a new reset link."
         )
       );
+      setCaptchaAnswer("");
+      const challenge = await captchaService.getChallenge("PASSWORD_RESET");
+      setCaptcha(challenge);
     } finally {
       setIsSubmitting(false);
     }
@@ -117,6 +145,25 @@ export default function ResetPasswordPage() {
           placeholder="Confirm your new password"
           autoComplete="new-password"
           required
+        />
+
+        <CaptchaChallenge
+          challenge={captcha}
+          answer={captchaAnswer}
+          onAnswerChange={setCaptchaAnswer}
+          onRefresh={() => {
+            void (async () => {
+              setIsRefreshingCaptcha(true);
+              try {
+                const challenge = await captchaService.getChallenge("PASSWORD_RESET");
+                setCaptcha(challenge);
+                setCaptchaAnswer("");
+              } finally {
+                setIsRefreshingCaptcha(false);
+              }
+            })();
+          }}
+          isRefreshing={isRefreshingCaptcha}
         />
 
         <Button

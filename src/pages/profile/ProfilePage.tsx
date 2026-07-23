@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import Alert from "../../components/common/Alert";
@@ -15,7 +15,15 @@ import securityNotificationService from "../../services/security-notification.se
 import type { ReauthenticationAction } from "../../types/auth.types";
 import { getApiErrorMessage } from "../../utils/apiError";
 
-const SECURITY_NOTIFICATION_POLLING_MS = 45000;
+const SECURITY_NOTIFICATION_POLLING_MS = 45000; // Poll for unread security notifications every 45 seconds
+const PROFILE_CATEGORY_OPTIONS = [
+  "BOOKS",
+  "ELECTRONICS",
+  "CLOTHING",
+  "FURNITURE",
+  "HANDMADE",
+  "OTHER",
+] as const;
 
 function formatRoleLabel(role: string) {
   return role.charAt(0) + role.slice(1).toLowerCase();
@@ -26,7 +34,7 @@ function formatMemberSince(value?: string) {
     return "Member date unavailable";
   }
 
-  return new Intl.DateTimeFormat("en-US", {
+  return new Intl.DateTimeFormat("en-US", { 
     year: "numeric",
     month: "long",
   }).format(new Date(value));
@@ -72,11 +80,23 @@ export default function ProfilePage() {
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [securityMessage, setSecurityMessage] = useState("");
   const [securityError, setSecurityError] = useState("");
+  const [profileMessage, setProfileMessage] = useState("");
+  const [profileError, setProfileError] = useState("");
   const [isStartingSetup, setIsStartingSetup] = useState(false);
   const [isEnablingTotp, setIsEnablingTotp] = useState(false);
   const [isSensitiveActionPending, setIsSensitiveActionPending] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isImportingProfile, setIsImportingProfile] = useState(false);
   const [unreadSecurityNotifications, setUnreadSecurityNotifications] = useState(0);
   const [reauthAction, setReauthAction] = useState<ReauthenticationAction | null>(null);
+  const [profileForm, setProfileForm] = useState({
+    displayName: "",
+    avatarUrl: "",
+    bio: "",
+    city: "",
+    favoriteCategory: "",
+    emailDigestEnabled: true,
+  });
 
   const securityOverview = useMemo(() => {
     if (!user) {
@@ -134,6 +154,21 @@ export default function ProfilePage() {
     };
   }, [user]);
 
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    setProfileForm({
+      displayName: user.displayName ?? "",
+      avatarUrl: user.avatarUrl ?? "",
+      bio: user.bio ?? "",
+      city: user.city ?? "",
+      favoriteCategory: user.favoriteCategory ?? "",
+      emailDigestEnabled: user.emailDigestEnabled ?? true,
+    });
+  }, [user]);
+
   if (isLoading) {
     return (
       <div className="dashboard-page">
@@ -169,6 +204,11 @@ export default function ProfilePage() {
   const resetFeedback = () => {
     setSecurityError("");
     setSecurityMessage("");
+  };
+
+  const resetProfileFeedback = () => {
+    setProfileError("");
+    setProfileMessage("");
   };
 
   const handleStartSetup = async () => {
@@ -229,6 +269,116 @@ export default function ProfilePage() {
   const handleSensitiveAction = async (action: ReauthenticationAction) => {
     resetFeedback();
     setReauthAction(action);
+  };
+
+  const handleProfileSave = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    resetProfileFeedback();
+    setIsSavingProfile(true);
+
+    try {
+      const updatedUser = await authService.updateProfile({
+        displayName: profileForm.displayName || null,
+        avatarUrl: profileForm.avatarUrl || null,
+        bio: profileForm.bio || null,
+        city: profileForm.city || null,
+        favoriteCategory: profileForm.favoriteCategory || null,
+        emailDigestEnabled: profileForm.emailDigestEnabled,
+      });
+
+      setProfileForm({
+        displayName: updatedUser.displayName ?? "",
+        avatarUrl: updatedUser.avatarUrl ?? "",
+        bio: updatedUser.bio ?? "",
+        city: updatedUser.city ?? "",
+        favoriteCategory: updatedUser.favoriteCategory ?? "",
+        emailDigestEnabled: updatedUser.emailDigestEnabled ?? true,
+      });
+      await refreshCurrentUser();
+      setProfileMessage("Profile preferences updated successfully.");
+    } catch (error) {
+      setProfileError(
+        getApiErrorMessage(error, "We couldn't update your profile right now.")
+      );
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  const handleProfileExport = async () => {
+    resetProfileFeedback();
+
+    try {
+      const exportedProfile = await authService.exportProfile();
+      const blob = new Blob([JSON.stringify(exportedProfile, null, 2)], {
+        type: "application/json",
+      });
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = `safetrade-profile-export-${new Date()
+        .toISOString()
+        .slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
+      setProfileMessage("Profile export downloaded successfully.");
+    } catch (error) {
+      setProfileError(
+        getApiErrorMessage(error, "We couldn't export your profile data.")
+      );
+    }
+  };
+
+  const handleProfileImport = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    resetProfileFeedback();
+    setIsImportingProfile(true);
+
+    try {
+      const rawContent = await file.text();
+      const parsed = JSON.parse(rawContent) as {
+        profile?: {
+          displayName?: string | null;
+          avatarUrl?: string | null;
+          bio?: string | null;
+          city?: string | null;
+          favoriteCategory?: string | null;
+          emailDigestEnabled?: boolean;
+        };
+      };
+
+      if (!parsed.profile) {
+        throw new Error("This import file does not contain a SafeTrade profile payload.");
+      }
+
+      const updatedUser = await authService.importProfile(parsed.profile);
+      setProfileForm({
+        displayName: updatedUser.displayName ?? "",
+        avatarUrl: updatedUser.avatarUrl ?? "",
+        bio: updatedUser.bio ?? "",
+        city: updatedUser.city ?? "",
+        favoriteCategory: updatedUser.favoriteCategory ?? "",
+        emailDigestEnabled: updatedUser.emailDigestEnabled ?? true,
+      });
+      await refreshCurrentUser();
+      setProfileMessage("Profile data imported successfully.");
+    } catch (error) {
+      setProfileError(
+        error instanceof Error
+          ? error.message
+          : "We couldn't import that profile file."
+      );
+    } finally {
+      event.target.value = "";
+      setIsImportingProfile(false);
+    }
   };
 
   const handleConfirmReauthentication = async (payload: {
@@ -321,9 +471,21 @@ export default function ProfilePage() {
           <div className="panel-card__header">
             <div>
               <h3>Personal Information</h3>
-              <p>Your account identity and role details from the current session.</p>
+              <p>Update your public SafeTrade profile details and move your own data in or out safely.</p>
             </div>
           </div>
+
+          {profileError ? (
+            <Alert variant="error" title="Profile update failed">
+              {profileError}
+            </Alert>
+          ) : null}
+
+          {profileMessage ? (
+            <Alert variant="success" title="Profile updated">
+              {profileMessage}
+            </Alert>
+          ) : null}
 
           <div className="profile-detail-grid">
             <div>
@@ -352,11 +514,121 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <div className="profile-coming-soon">
-            <Button variant="secondary" disabled>
-              Edit Profile
-            </Button>
-            <span>Profile editing is coming soon.</span>
+          <form className="profile-stack" onSubmit={handleProfileSave}>
+            <Input
+              label="Display name"
+              value={profileForm.displayName}
+              onChange={(event) =>
+                setProfileForm((current) => ({
+                  ...current,
+                  displayName: event.target.value,
+                }))
+              }
+              placeholder="How buyers and sellers should see you"
+            />
+            <Input
+              label="Avatar image URL"
+              value={profileForm.avatarUrl}
+              onChange={(event) =>
+                setProfileForm((current) => ({
+                  ...current,
+                  avatarUrl: event.target.value,
+                }))
+              }
+              placeholder="https://example.com/avatar.jpg"
+              helperText="Only HTTPS links are accepted to avoid mixed-content risks."
+            />
+            <label className="ui-field">
+              <span className="ui-field__label">City</span>
+              <input
+                className="ui-input"
+                value={profileForm.city}
+                onChange={(event) =>
+                  setProfileForm((current) => ({
+                    ...current,
+                    city: event.target.value,
+                  }))
+                }
+                placeholder="Kathmandu"
+              />
+            </label>
+            <label className="ui-field">
+              <span className="ui-field__label">Preferred category</span>
+              <select
+                className="ui-input"
+                value={profileForm.favoriteCategory}
+                onChange={(event) =>
+                  setProfileForm((current) => ({
+                    ...current,
+                    favoriteCategory: event.target.value,
+                  }))
+                }
+              >
+                <option value="">No preference</option>
+                {PROFILE_CATEGORY_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option.replace(/_/g, " ")}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="ui-field">
+              <span className="ui-field__label">Bio</span>
+              <textarea
+                className="ui-input"
+                value={profileForm.bio}
+                onChange={(event) =>
+                  setProfileForm((current) => ({
+                    ...current,
+                    bio: event.target.value,
+                  }))
+                }
+                rows={4}
+                placeholder="Tell local buyers and sellers a little about yourself."
+              />
+            </label>
+            <label className="auth-checkbox">
+              <input
+                type="checkbox"
+                checked={profileForm.emailDigestEnabled}
+                onChange={(event) =>
+                  setProfileForm((current) => ({
+                    ...current,
+                    emailDigestEnabled: event.target.checked,
+                  }))
+                }
+              />
+              <span>Allow privacy-friendly email digests for account and marketplace updates</span>
+            </label>
+            <div className="profile-coming-soon">
+              <Button type="submit" variant="secondary" disabled={isSavingProfile}>
+                {isSavingProfile ? "Saving profile..." : "Save profile"}
+              </Button>
+            </div>
+          </form>
+
+          <div className="profile-stack">
+            <div className="profile-list-row">
+              <div>
+                <strong>Data portability</strong>
+                <span>Export only your own profile data, then re-import the same safe fields later without exposing secrets or internal IDs.</span>
+              </div>
+              <Badge variant="info">Privacy aligned</Badge>
+            </div>
+            <div className="profile-coming-soon">
+              <Button variant="secondary" onClick={() => void handleProfileExport()}>
+                Export profile data
+              </Button>
+              <label className="ui-button ui-button--ghost ui-button--md">
+                {isImportingProfile ? "Importing..." : "Import profile data"}
+                <input
+                  type="file"
+                  accept="application/json"
+                  onChange={handleProfileImport}
+                  style={{ display: "none" }}
+                />
+              </label>
+            </div>
           </div>
         </Card>
 

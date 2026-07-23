@@ -27,20 +27,10 @@ type AuthProviderProps = {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(() => authService.getStoredUser());
-  const [isLoading, setIsLoading] = useState(() =>
-    Boolean(authService.getAccessToken()) && !authService.getStoredUser()
-  );
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const restoreSession = async () => {
-      const token = authService.getAccessToken();
-
-      if (!token) {
-        setUser(null);
-        setIsLoading(false);
-        return;
-      }
-
       try {
         const currentUser = await authService.getCurrentUser();
         setUser(currentUser);
